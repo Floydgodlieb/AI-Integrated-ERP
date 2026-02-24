@@ -8,6 +8,7 @@ Project Lead (Student):
 - Anastasios Polymenakos 
 - Julian Peters
 - Lyndon Boesveld
+
 Start Date: 24-02-2026
 End Date: [Date]
 
