@@ -19,3 +19,20 @@ Ill give you a small guide of commands you can use. Just because I think its goo
 - `~ git push` : this is the command to push your commit to the server. This is hard to redo so check it with `git status` before doing it.
 
 - `~ git pull` : This command lets you update your local folder from the server. So all new work added to the server will be on your system.
+
+## Github
+Github previously mentioned owned my Microsoft is a website that lets you see and store project files. You can follow other developers, see public repos that are open source and track your own. For this project we will be focused on our own project. 
+
+An important step for Git and Github to work together is making a SSH key, I wont go into dept what that is. You can look it up or ask me if you want to know it. Making an SSH key isn't difficult if you know what you need to do. Github has some great documantation on it (https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent). This will guide you trough the steps. If you need any help let me know. 
+
+Version control is a important topic, especilly when you are working with a team on a big project. To not mess up someones or your own work you have to be carefull. The best way to not mess things up is working in branches. Think of it like a copy of a painting so you can do your own thing without having to worry about the original painting.
+
+You can push your code/work onto your branch and then make a 'merge request' to add it to the main branch (the original painting). Someone else then checks your work and makes sure it wont break anything and your code alligns with the code conventions (some rules about how your code should look like).
+
+After the green light of a college you can push your code onto the main branch.
+
+## Github planning
+
+Github is used for big projects, think about your banking app and the social media platform X. Some big projects with a lot of developers and testers on it. To stay on top of the development and the work that need or has been done Github works with issues/task.
+
+For example a new feature gets an issue where you can read what needs to be done, when will it be done and who is going to work on it. This makes a project run smooth and the boss knows who is slacking. For this project we can work with issues so we dont forget anything that needs to be done.
