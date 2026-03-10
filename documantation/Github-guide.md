@@ -36,3 +36,5 @@ After the green light of a college you can push your code onto the main branch.
 Github is used for big projects, think about your banking app and the social media platform X. Some big projects with a lot of developers and testers on it. To stay on top of the development and the work that need or has been done Github works with issues/task.
 
 For example a new feature gets an issue where you can read what needs to be done, when will it be done and who is going to work on it. This makes a project run smooth and the boss knows who is slacking. For this project we can work with issues so we dont forget anything that needs to be done.
+
+Let me know if there are any details I left out.
