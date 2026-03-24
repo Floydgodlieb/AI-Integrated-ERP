@@ -31,6 +31,9 @@ By working with a large language model the user will be able to tell the AI what
 ### 3.1 AI strategy
 The AI model will be used to interpret the message that got send to him. It will read it and form a SQL statement or a HTTP/HTTPS request made with JSON out of it. This will use a API to let both communicate with eachother. 
 
+### 3.2 Middleware
+Get company name and allias if needed. Microsoft and MSC
+
 Authentication is a problem to tackle. There ERP system of Odoo.com has it's own security where we have to deal with.
 
 ## 4. Risk management
