@@ -3,11 +3,11 @@
 Project Charter: Minor Data Driven Decision Making
 (M3DM)
 Project Name: AI-Integrated ERP (“Invisible ERP”)
-Project Owners: Witold ten Hove
-Project Lead (Student): 
-- Anastasios Polymenakos 
-- Julian Peters
-- Lyndon Boesveld
+
+# Introduction
+In this project we will focus on making a ERP system that uses a LLM (Large Launguege Model) to update the ERP system. In the end you can tell the LLM that you have made a sale of '50 chairs to L.Luther' and that be updated in the ERP Database.
+
+The ERP system that we will use for this project is a open source system called Odoo (https://github.com/odoo/odoo)
 
 Start Date: 24-02-2026
 End Date: [Date]
