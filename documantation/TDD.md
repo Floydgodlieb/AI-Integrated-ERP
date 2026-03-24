@@ -7,7 +7,7 @@ By reading this file you will get a clue on what will be done this project.
 ### 1.1 Purpose
 The purpose of this project is to take the next step in the field of ERPs and combine it with AI. The goal of the project is to have no need for the user interface, this is where the AI will step up.
 
-By working with a large launguege model the user will be able to tell the AI what sales or updates has been made. The AI will handle those changes to keep the system up-to date.
+By working with a large language model the user will be able to tell the AI what sales or updates has been made. The AI will handle those changes to keep the system up-to date.
 
 ### 1.2 Scope
 
@@ -31,7 +31,7 @@ By working with a large launguege model the user will be able to tell the AI wha
 ### 3.1 AI strategy
 The AI model will be used to interpret the message that got send to him. It will read it and form a SQL statement or a HTTP/HTTPS request made with JSON out of it. This will use a API to let both communicate with eachother. 
 
-Authentication is a problem to tackel. There ERP system of Odoo.com has it's own security where we have to deal with.
+Authentication is a problem to tackle. There ERP system of Odoo.com has it's own security where we have to deal with.
 
 ## 4. Risk management
 
