@@ -21,7 +21,7 @@ The goal of the product is to reduce manual work in core workflows such as accou
 
 ### 3.1 Wedge Strategy
 
- The product will not launch as a full ERP replacement. Instead, it will focus on a small number of high-value and low-risk workflows, such as invoice processing and matching, inventory updates and reorder alerts, and cash flow visibility and forecasting. This approach reduces implementation risk, lowers switching resistance, and ensures that users can experience value quickly without committing to a full system change.
+ The product will not launch as a full ERP replacement. Instead, it will focus on a small number of high-value and low-risk workflows, which could be things such as invoice processing and matching, inventory updates and reorder alerts, and cash flow visibility and forecasting. This approach reduces implementation risk, lowers switching resistance, and ensures that users can experience value quickly without committing to a full system change.
 
 ### 3.2 Integration-First Approach
 
