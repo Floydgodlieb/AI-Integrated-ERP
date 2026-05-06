@@ -35,5 +35,8 @@ Focus on non technical users that uses JSON as output and able to work with REST
 ## Final decision
 The decision is made to use Ollama because it is easy to host, and its documentation is excellent
 
+## model
+After installing Ollama, I went and install llama3.1. This can make the api used to send to odoo.com.
+
 ## Sources
 [^1]: Tahir (24 Mar 2025). *💻What is Ollama: Running Large Language Models Locally*. medium. https://medium.com/@tahirbalarabe2/what-is-ollama-running-large-language-models-locally-e917ca40defe
