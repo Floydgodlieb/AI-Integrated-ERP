@@ -91,15 +91,22 @@ STRICT TOOL RULES:
 - domain MUST be a real array list structure, not a raw string.
 - NEVER use SQL commands or raw timestamps like NOW() inside the domain. Use static text dates like '2026-01-01 00:00:00' if filtering by date.
 - NEVER use "*" in fields. Always return explicit field names.
-- NEVER make up date, use the odoo_search_read_tool if needed or ask the user.
 
 Odoo model maps:
 - sale orders → sale.order
 - customers → res.partner
 - invoices → account.move
 
-Standard fields for res.partner: ["name", "id", "create_date"]
-Standard fields for sale.order: ["partner_id", "pricelist_id", "orderline['product_id', 'product_uom_qty' ]"]
+To add a costumer these data needs to be there, dont make the data up yourself:
+- Name of the company
+- Email
+- Phone number
+- Address (street, City, country_id (can be found in res_country, user might give name or code, look for the correct id), state_id (can be found in 'res_country_state', user might give name or code, look for the correct id), Zip)
+- vat
+- TaxID (default is '/')
+- Website
+- email_normalized (repeat of Email)
+
 """
 
 def execute_local_tool(tool_name: str, args: dict):
