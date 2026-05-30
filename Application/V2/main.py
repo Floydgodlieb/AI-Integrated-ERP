@@ -1,0 +1,235 @@
+import json
+import ast
+import xmlrpc.client
+import datetime
+import re
+from ollama import chat, ChatResponse
+
+# Configurations
+url = 'http://localhost:8069'
+db = 'odoo'
+username = 'jcwm.peters@student.han.nl'
+password = 'ONXwUSjlyO0Qk7'
+
+# System authentication
+try:
+    common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
+    uid = common.authenticate(db, username, password, {})
+except Exception as e:
+    print(f"❌ Something went wrong, make sure Odoo is running. Error: {str(e)}")
+    exit()
+
+if not uid:
+    print("❌ Login Failed. Check credentials or Odoo instance status.")
+    exit()
+
+print("✅ Connection securely established to Odoo Instance.")
+models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+
+# Tool Schema definitions for Ollama Orchestration
+odoo_search_read_tool = {
+    'type': 'function',
+    'function': {
+        'name': 'odoo_search_read',
+        'description': 'Search for records in Odoo and read their fields.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'model': {
+                    'type': 'string',
+                    'description': 'Odoo model, e.g. sale.order'
+                },
+                'domain': {
+                    'type': 'array',
+                    'description': 'Odoo domain list of criteria, e.g. [["name","=","S00007"]]. Use [[]] for all records.'
+                },
+                'fields': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                    'description': 'Explicit list of fields to retrieve, e.g. ["name", "id"]. Never use asterisks.'
+                }
+            },
+            'required': ['model', 'domain', 'fields'],
+            'additionalProperties': False
+        }
+    }
+}
+
+odoo_create_tool = {
+    'type': 'function',
+    'function': {
+        'name': 'odoo_create',
+        'description': 'Add a new record in Odoo and return its database identifier.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'model': {
+                    'type': 'string',
+                    'description': 'Odoo model, e.g. res.partner'
+                },
+                'values': {
+                    'type': 'object',
+                    'description': 'Key-value pairs of fields to set, e.g. {"name": "John Doe"}'
+                }
+            },
+            'required': ['model', 'values'],
+            'additionalProperties': False
+        }
+    }
+}
+
+system_instruction = """
+You are an Odoo ERP API Assistant. Your objective is to help the user manage customers, orders, and sales data.
+
+CONVERSATIONAL RULES:
+- Talk to the user normally to understand what they want to achieve.
+- Propose your structural action by outputting a valid JSON block containing the function name and parameters.
+- Once you receive data back from the system, interpret it and give a clear explanation.
+
+STRICT TOOL RULES:
+- Output valid tool calls matching the JSON schemas provided.
+- domain MUST be a real array list structure, not a raw string.
+- NEVER use SQL commands or raw timestamps like NOW() inside the domain. Use static text dates like '2026-01-01 00:00:00' if filtering by date.
+- NEVER use "*" in fields. Always return explicit field names.
+
+Odoo model maps:
+- sale orders → sale.order
+- customers → res.partner
+- invoices → account.move
+
+To add a costumer these data needs to be there, dont make the data up yourself:
+- Name of the company
+- Email
+- Phone number
+- Address (street, City, country_id (can be found in res_country, user might give name or code, look for the correct id), state_id (can be found in 'res_country_state', user might give name or code, look for the correct id), Zip)
+- vat
+- TaxID (default is '/')
+- Website
+- email_normalized (repeat of Email)
+
+"""
+
+def execute_local_tool(tool_name: str, args: dict):
+    """Executes the specific Odoo function using the XML-RPC client wrapper."""
+    if tool_name == "odoo_search_read":
+        domain = args["domain"]
+        if isinstance(domain, str):
+            try:
+                domain = ast.literal_eval(domain)
+            except:
+                domain = []
+
+        # Ensure domains are structural lists for XML-RPC compliance
+        if len(domain) == 0 or domain == [[]]:
+            domain = []
+
+        print(f"🔧 [Executing ERP Read] Model: {args['model']} | Domain: {domain}")
+        result = models.execute_kw(
+            db, uid, password,
+            args["model"],
+            "search_read",
+            [domain],
+            {"fields": args["fields"]}
+        )
+        return result
+
+    elif tool_name == "odoo_create":
+        print(f"📤 [Executing ERP Create] Model: {args['model']}")
+        new_id = models.execute_kw(
+            db, uid, password,
+            args["model"],
+            "create",
+            [args["values"]]
+        )
+        return {"status": "success", "created_id": new_id}
+        
+    raise ValueError(f"Unknown tool target execution requested: {tool_name}")
+
+def run_odoo_agent():
+    # Initialize the ongoing conversation history matrix
+    conversation_history = [
+        {'role': 'system', 'content': system_instruction}
+    ]
+
+    print("\n🤖 [Odoo Conversational Agent Active] Ask a question or submit an order modification request!")
+
+    while True:
+        try:
+            user_input = input("\nYou: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            break
+
+        if user_input.lower() in ['exit', 'quit']:
+            print("Exiting ERP assistant session.")
+            break
+
+        if not user_input:
+            continue
+
+        # 🎯 MANUAL OVERRIDE INTERCEPTOR
+        if user_input.lower() in ['run', 'fetch']:
+            print("\n⚡ [Manual Override] Intercepting keyword command... Locating last AI tool parameters...")
+            
+            # Search memory context backwards to grab the last JSON definition block
+            last_ai_json_message = None
+            for msg in reversed(conversation_history):
+                if msg['role'] == 'assistant' and '"name":' in msg['content']:
+                    last_ai_json_message = msg['content']
+                    break
+            
+            if last_ai_json_message:
+                try:
+                    # Strip any conversational pre-text to grab clean bracket scopes
+                    json_match = re.search(r'\{.*\}', last_ai_json_message, re.DOTALL)
+                    if json_match:
+                        extracted_json = json.loads(json_match.group(0).replace("'", '"'))
+                        tool_name = extracted_json.get("name")
+                        args = extracted_json.get("parameters") or extracted_json.get("arguments", {})
+                        
+                        # Auto-clean wildcard asterisk bug if generated
+                        if "fields" in args and ("*" in args["fields"] or not args["fields"]):
+                            args["fields"] = ["name", "id"]
+                        
+                        # Hit the live local deployment database server
+                        tool_result = execute_local_tool(tool_name, args)
+                        
+                        # Push the actual query data right back into context window memory
+                        conversation_history.append({
+                            'role': 'tool',
+                            'content': json.dumps(tool_result, default=str),
+                            'name': tool_name
+                        })
+                        
+                        print("🔄 [System] Live Odoo data fetched! Asking AI to interpret results...")
+                        
+                        # Trigger structural chat completion to yield natural final answer
+                        response = chat(model='llama3.1', messages=conversation_history)
+                        ai_reply = response.message.content
+                        print(f"\nAI: {ai_reply}")
+                        conversation_history.append({'role': 'assistant', 'content': ai_reply})
+                        continue
+                    else:
+                        print("❌ No valid structural JSON boundaries found in the previous assistant message.")
+                except Exception as e:
+                    print(f"❌ Failed to execute manual shortcut payload: {str(e)}")
+                continue
+            else:
+                print("❌ There is no previous AI tool proposal found in chat memory context.")
+                continue
+
+        # Regular conversational chat flow
+        conversation_history.append({'role': 'user', 'content': user_input})
+        
+        print("\n[AI] Processing data tracking state...")
+        response: ChatResponse = chat(
+            model='llama3.1',
+            messages=conversation_history,
+            tools=[odoo_search_read_tool, odoo_create_tool]
+        )
+        
+        ai_reply = response.message.content or ""
+        print(f"\nAI: {ai_reply}")
+        conversation_history.append({'role': 'assistant', 'content': ai_reply})
+
+if __name__ == "__main__":
+    run_odoo_agent()
