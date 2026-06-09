@@ -1,8 +1,8 @@
 import json
 import ast
 import xmlrpc.client
-import datetime
 import re
+import urllib.request
 from ollama import chat, ChatResponse
 
 # Configurations
@@ -10,6 +10,9 @@ url = 'http://localhost:8069'
 db = 'odoo'
 username = 'jcwm.peters@student.han.nl'
 password = 'ONXwUSjlyO0Qk7'
+
+# paste your Teams webhook URL directly here
+TEAMS_WEBHOOK_URL = "https://default5d73e7b7b3e14d00b303056140b2a3.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/fcd1b2652820422e9645f70fdc68a208/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RdFTJRaixP2o1oTVxCIY7rvbyUKt7h6vI3J68cyc_9Q"
 
 # System authentication
 try:
@@ -25,6 +28,64 @@ if not uid:
 
 print("✅ Connection securely established to Odoo Instance.")
 models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+
+def send_teams_notification(title, message, is_success=True):
+    """Sends a native Adaptive Card payload to your Teams Workflows endpoint."""
+    status_color = "Good" if is_success else "Attention"
+    status_label = "✅ SUCCESS" if is_success else "❌ ERROR"
+    
+    payload = {
+        "type": "message",
+        "attachments": [
+            {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                    "type": "AdaptiveCard",
+                    "body": [
+                        {
+                            "type": "Container",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "size": "Medium",
+                                    "weight": "Bolder",
+                                    "text": f"🤖 Odoo Agent Alert: {title}"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": f"Status: **{status_label}**",
+                                    "color": status_color,
+                                    "weight": "Bolder",
+                                    "spacing": "Small"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": message,
+                                    "wrap": True,
+                                    "spacing": "Medium"
+                                }
+                            ]
+                        }
+                    ],
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "version": "1.4"
+                }
+            }
+        ]
+    }
+    
+    try:
+        req = urllib.request.Request(
+            TEAMS_WEBHOOK_URL,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json'}
+        )
+        with urllib.request.urlopen(req) as response:
+            if response.status in [200, 202]:
+                print("📢 Teams alert payload sent successfully.")
+    except Exception as e:
+        print(f"⚠️ Teams dispatch warning: {e}")
+
 
 # Tool Schema definitions for Ollama Orchestration
 odoo_search_read_tool = {
@@ -83,56 +144,37 @@ You are an Odoo ERP API Assistant. Your objective is to help the user manage cus
 
 CONVERSATIONAL RULES:
 - Talk to the user normally to understand what they want to achieve.
-- Propose your structural action by outputting a valid JSON block containing the function name and parameters.
+- CRITICAL: If the user says something vague like "I want to add a sale" or "Create an invoice", DO NOT output a JSON block yet. Ask them for the missing details first (Customer, Products, Quantities).
+- Only propose your structural action by outputting a valid JSON block once you have all the required variables.
 - Once you receive data back from the system, interpret it and give a clear explanation.
-- Be usefull, everyone should be able to use you. Not only techinical users.
+
 STRICT TOOL RULES:
 - Output valid tool calls matching the JSON schemas provided.
+- NEVER include python-style inline comments (like # comment) inside any JSON block output. It breaks parsers.
 - domain MUST be a real array list structure, not a raw string.
 - NEVER use SQL commands or raw timestamps like NOW() inside the domain. Use static text dates like '2026-01-01 00:00:00' if filtering by date.
 - NEVER use "*" in fields. Always return explicit field names.
+- If you look up the ID of a product also get the price of the product.
 
 Odoo model maps:
-- sale orders → sale.order
+- sales orders → sale.order
 - customers → res.partner
 - invoices → account.move
 
-To add a costumer these data needs to be there, dont make the data up yourself:
-- Name of the company
-- Email
-- Phone number
-- Address (street, City, country_id (can be found in res_country, user might give name or code, look for the correct id), state_id (can be found in 'res_country_state', user might give name or code, look for the correct id), Zip)
-- vat
-- TaxID (default is '/')
-- Website
-- email_normalized (repeat of Email)
+CRITICAL FIELDS NOTICE:
+- Do NOT mix sale.order and account.move fields! 
+- If creating a customer invoice, use model "account.move" and set "move_type": "out_invoice". 
+- Do NOT use "move_type" if the model is "sale.order".
 
-To create a invoice you need this data:
-partner_id (customer)
-move_type: "out_invoice" (invoice) or "out_refund" (credit note)
-journal_id
-invoice_date (date)
-company_id
-currency_id (if not company default)
-invoice_line_ids (one or more lines), each with:
+FEW-SHOT SYNTAX EXAMPLES:
+User wants a costumers information
+{ "name": "odoo_search_read", "parameters": { "model": "res.partner", "domain": [["name", "ilike", "Pepsi"]], "fields": ["name", "id"] } }
 
-    product_id or name
-    quantity
-    price_unit
-    account_id (if product has no income_account_id)
-    tax_ids (list)
-    uom_id (if applicable)
+User wants a Sales Order:
+{"name": "odoo_create", "parameters": {"model": "sale.order", "values": {"partner_id": 72, "order_line": [[0, 0, {"product_id": 15, "product_uom_qty": 2, "price_unit": 140.00}]]}}}
 
-partner_invoice_id (billing address) and partner_shipping_id (shipping address) if different
-invoice_payment_term_id (payment terms) — optional but common
-fiscal_position_id (if tax mapping required) — optional
-user_id (salesperson) — optional
-name (reference) — usually auto-generated by journal sequence
-analytic_account_id (if analytic entries required) — optional
-
-For creating a invoice it's important to have a product that is being sold.
-Give the user feedback on wether the invoice has been made. If that is not the case tell the user and give it the response you got back. 
-
+User wants an Invoice:
+{"name": "odoo_create", "parameters": {"model": "account.move", "values": {"partner_id": 72, "move_type": "out_invoice", "invoice_date": "2026-06-09", "invoice_line_ids": [[0, 0, {"product_id": 15, "quantity": 2, "price_unit": 140.00}]]}}}
 """
 
 def execute_local_tool(tool_name: str, args: dict):
@@ -145,7 +187,6 @@ def execute_local_tool(tool_name: str, args: dict):
             except:
                 domain = []
 
-        # Ensure domains are structural lists for XML-RPC compliance
         if len(domain) == 0 or domain == [[]]:
             domain = []
 
@@ -161,18 +202,48 @@ def execute_local_tool(tool_name: str, args: dict):
 
     elif tool_name == "odoo_create":
         print(f"📤 [Executing ERP Create] Model: {args['model']}")
+        
+        # --- AUTO-CORRECTION LAYER FOR SALES ORDERS ---
+        if args['model'] == 'sale.order' and 'order_line' in args['values']:
+            raw_lines = args['values']['order_line']
+            if raw_lines and isinstance(raw_lines, list):
+                for line in raw_lines:
+                    if isinstance(line, list) and len(line) == 3 and isinstance(line[2], dict):
+                        line_data = line[2]
+                        if 'quantity' in line_data:
+                            line_data['product_uom_qty'] = line_data.pop('quantity')
+
+        # --- AUTO-CORRECTION LAYER FOR INVOICES ---
+        if args['model'] == 'account.move' and 'invoice_line_ids' in args['values']:
+            raw_lines = args['values']['invoice_line_ids']
+            if raw_lines and isinstance(raw_lines, list):
+                if not isinstance(raw_lines[0], list):
+                    args['values']['invoice_line_ids'] = [[0, 0, line] if isinstance(line, dict) else line for line in raw_lines]
+                for line in args['values']['invoice_line_ids']:
+                    if isinstance(line, list) and len(line) == 3 and isinstance(line[2], dict):
+                        line_data = line[2]
+                        if 'product_uom_qty' in line_data:
+                            line_data['quantity'] = line_data.pop('product_uom_qty')
+
+        # Run creation on local instance
         new_id = models.execute_kw(
             db, uid, password,
             args["model"],
             "create",
             [args["values"]]
         )
+        
+        # Dispatch success out to Microsoft Teams
+        send_teams_notification(
+            title=f"ERP Record Created: {args['model']}",
+            message=f"Successfully generated a new entry under **{args['model']}** with Database ID: `{new_id}`.",
+            is_success=True
+        )
         return {"status": "success", "created_id": new_id}
         
     raise ValueError(f"Unknown tool target execution requested: {tool_name}")
 
 def run_odoo_agent():
-    # Initialize the ongoing conversation history matrix
     conversation_history = [
         {'role': 'system', 'content': system_instruction}
     ]
@@ -196,7 +267,6 @@ def run_odoo_agent():
         if user_input.lower() in ['run', 'fetch']:
             print("\n⚡ [Manual Override] Intercepting keyword command... Locating last AI tool parameters...")
             
-            # Search memory context backwards to grab the last JSON definition block
             last_ai_json_message = None
             for msg in reversed(conversation_history):
                 if msg['role'] == 'assistant' and '"name":' in msg['content']:
@@ -205,21 +275,23 @@ def run_odoo_agent():
             
             if last_ai_json_message:
                 try:
-                    # Strip any conversational pre-text to grab clean bracket scopes
                     json_match = re.search(r'\{.*\}', last_ai_json_message, re.DOTALL)
+                    
                     if json_match:
-                        extracted_json = json.loads(json_match.group(0).replace("'", '"'))
+                        clean = json_match.group(0)
+                        clean = re.sub(r'#.*$', '', clean, flags=re.MULTILINE) # Strip comments
+                        clean = clean.replace("'", '"')
+                        clean = re.sub(r'"domain":\s*"(\[\s*\[.*?\]\s*\])"', r'"domain": \1', clean)
+                        
+                        extracted_json = json.loads(clean)
                         tool_name = extracted_json.get("name")
                         args = extracted_json.get("parameters") or extracted_json.get("arguments", {})
                         
-                        # Auto-clean wildcard asterisk bug if generated
                         if "fields" in args and ("*" in args["fields"] or not args["fields"]):
                             args["fields"] = ["name", "id"]
                         
-                        # Hit the live local deployment database server
                         tool_result = execute_local_tool(tool_name, args)
                         
-                        # Push the actual query data right back into context window memory
                         conversation_history.append({
                             'role': 'tool',
                             'content': json.dumps(tool_result, default=str),
@@ -228,16 +300,24 @@ def run_odoo_agent():
                         
                         print("🔄 [System] Live Odoo data fetched! Asking AI to interpret results...")
                         
-                        # Trigger structural chat completion to yield natural final answer
                         response = chat(model='llama3.1', messages=conversation_history)
                         ai_reply = response.message.content
                         print(f"\nAI: {ai_reply}")
+
                         conversation_history.append({'role': 'assistant', 'content': ai_reply})
                         continue
                     else:
                         print("❌ No valid structural JSON boundaries found in the previous assistant message.")
                 except Exception as e:
-                    print(f"❌ Failed to execute manual shortcut payload: {str(e)}")
+                    error_msg = str(e)
+                    print(f"❌ Failed to execute manual shortcut payload: {error_msg}")
+                    
+                    # Dispatch error out to Microsoft Teams
+                    send_teams_notification(
+                        title=f"ERP Execution Failure",
+                        message=f"An action failed to process on the Odoo backend.\n\n**Error Trace:**\n`{error_msg[:250]}...`",
+                        is_success=False
+                    )
                 continue
             else:
                 print("❌ There is no previous AI tool proposal found in chat memory context.")
