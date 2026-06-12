@@ -1,0 +1,33 @@
+:root {
+  --bg: #1f1f1f;
+  --surface: #252525;
+  --surface-hover: #2a2a2a;
+  --border: #333333;
+  --text: #b0b0b8;
+  --text-h: #f0f0f2;
+  --text-muted: #707078;
+  --beige: #c09a73;
+  --beige-soft: #b08966;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --blue: #3b82f6;
+  --accent: #9a7a5a;
+  font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
