@@ -99,7 +99,7 @@ Expected: all `[ OK ]` (Odoo version, login as `ai_agent`, apps, 14 customers, 1
 1. "Show me all customers" → a table with your 14 customers.
 2. "Create a sales order for Pepsi with 2 Chair" → approval dialog → ✓ → in Odoo: **Sales → Orders → Quotations** shows a **draft** quotation for Pepsi.
 3. "Create an invoice for Pepsi with 3 Chair" → approve → Odoo **Invoicing → Customers → Invoices** shows a **draft** invoice.
-4. Known behaviour of V3.1: prices come from Odoo (not from the AI), only draft quotations/invoices are created, name matching is still fuzzy, creating a *new customer* fails for `ai_agent` (by design). The real Llama 3.1 can still make up details in its written answers – compare with Odoo and note anything odd in `documentation/EXPERIMENT-LOG.md`.
+4. Known behaviour of V3.1: prices come from Odoo (not from the AI), only draft quotations/invoices are created, name matching is still fuzzy, creating a *new customer* fails for `ai_agent` (by design). The real Llama 3.1 can still make up details in its written answers – compare with Odoo and note anything odd in `documentation/our-work/experiments/EXPERIMENT-LOG.md`.
 
 ## 10. Record what you actually used (fill in – this is your reproducibility proof)
 | Item | Value | Date | Who |
@@ -121,7 +121,7 @@ Setup/
   seed_odoo.py           (test data + ai_agent user; idempotent)
   check_setup.py         (read-only verification)
   docker-compose.yml     (Docker alternative: Odoo 20 + PostgreSQL 17)
-documentation/data-contract/
+documentation/our-work/design/data-contract/
   DATA-CONTRACT.md  schemas_draft.py  contract_examples.json  test_contract.py
 ```
 

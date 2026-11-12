@@ -7,7 +7,7 @@
 | `Application/V3` | Previous group's final version, **unchanged** (kept for before/after comparison) | Archive |
 | `Application/V3.1` | **Our current version**: V3 with a hardened backend (safe Odoo access, prices from Odoo, expiring approvals, audit log, tests) | **Use this** |
 
-Start here: `Setup/Quickstart.md` (setup), `documentation/BACKEND-CHANGES.md` (what changed), `documentation/EXPERIMENT-LOG.md` (measurements).
+Start here: [`Setup/Quickstart.md`](Setup/Quickstart.md) (setup) and [`documentation/README.md`](documentation/README.md) (all documentation: [changes](documentation/our-work/changes/CHANGELOG.md), [test results](documentation/our-work/tests/TEST-RESULTS.md), [experiments](documentation/our-work/experiments/EXPERIMENT-LOG.md)).
 
 ---
 

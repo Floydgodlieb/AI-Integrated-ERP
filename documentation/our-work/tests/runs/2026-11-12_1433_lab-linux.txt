@@ -1,0 +1,106 @@
+Date   : 2026-11-12 14:33
+Who    : lab-linux
+OS     : Linux-6.18.44-fc-v378-x86_64-with-glibc2.39
+Python : 3.13.18
+Odoo   : 20.0-20261102
+Git    : claude/gifted-mccarthy-r2p1hv @ 4751804
+Command: pytest Application/V3.1/tests -v -rA --durations=5
+======================================================================
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /tmp/claude-0/-home-user-AI-Integrated-ERP/16b979ef-3a11-51dd-a9e4-c946c7ff5110/scratchpad/venv/bin/python
+rootdir: /home/user/AI-Integrated-ERP
+plugins: anyio-4.16.0
+collecting ... collected 41 items
+
+Application/V3.1/tests/test_api.py::test_health_reports_odoo_version PASSED [  2%]
+Application/V3.1/tests/test_api.py::test_read_customers PASSED           [  4%]
+Application/V3.1/tests/test_api.py::test_fields_sent_as_text_no_longer_break_the_read PASSED [  7%]
+Application/V3.1/tests/test_api.py::test_reading_system_users_is_refused PASSED [  9%]
+Application/V3.1/tests/test_api.py::test_approved_invoice_is_draft_with_odoo_price PASSED [ 12%]
+Application/V3.1/tests/test_api.py::test_declined_order_creates_nothing PASSED [ 14%]
+Application/V3.1/tests/test_api.py::test_unknown_customer_is_rejected PASSED [ 17%]
+Application/V3.1/tests/test_api.py::test_twenty_parallel_chats PASSED    [ 19%]
+Application/V3.1/tests/test_api.py::test_abandoned_approvals_do_not_freeze_the_server PASSED [ 21%]
+Application/V3.1/tests/test_api.py::test_unanswered_approval_expires PASSED [ 24%]
+Application/V3.1/tests/test_odoo_client.py::test_forty_parallel_reads_all_succeed PASSED [ 26%]
+Application/V3.1/tests/test_odoo_client.py::test_seed_data_is_present PASSED [ 29%]
+Application/V3.1/tests/test_odoo_client.py::test_fields_sent_as_text_still_work PASSED [ 31%]
+Application/V3.1/tests/test_odoo_client.py::test_unknown_or_forbidden_fields_are_left_out PASSED [ 34%]
+Application/V3.1/tests/test_odoo_client.py::test_filtering_on_a_forbidden_field_is_blocked PASSED [ 36%]
+Application/V3.1/tests/test_odoo_client.py::test_reads_are_limited PASSED [ 39%]
+Application/V3.1/tests/test_odoo_client.py::test_odoo_errors_are_short PASSED [ 41%]
+Application/V3.1/tests/test_odoo_client.py::test_invoice_uses_odoo_price_not_ai_price PASSED [ 43%]
+Application/V3.1/tests/test_odoo_client.py::test_sales_order_is_created_as_draft PASSED [ 46%]
+Application/V3.1/tests/test_safety_rules.py::test_odoo_traceback_becomes_one_short_line PASSED [ 48%]
+Application/V3.1/tests/test_safety_rules.py::test_access_error_is_reported_as_not_allowed PASSED [ 51%]
+Application/V3.1/tests/test_safety_rules.py::test_errors_are_value_errors_so_the_agent_handles_them PASSED [ 53%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[['name', 'email', 'phone']-expected0] PASSED [ 56%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[["name", "id"]-expected1] PASSED [ 58%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[name, email-expected2] PASSED [ 60%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[raw3-expected3] PASSED [ 63%]
+Application/V3.1/tests/test_safety_rules.py::test_ai_price_is_ignored_and_odoo_price_used PASSED [ 65%]
+Application/V3.1/tests/test_safety_rules.py::test_ai_price_kept_only_when_explicitly_allowed PASSED [ 68%]
+Application/V3.1/tests/test_safety_rules.py::test_only_customer_invoices_can_be_created PASSED [ 70%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[0] PASSED [ 73%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[-2] PASSED [ 75%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[lots] PASSED [ 78%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[None] PASSED [ 80%]
+Application/V3.1/tests/test_safety_rules.py::test_customer_must_be_a_real_odoo_id PASSED [ 82%]
+Application/V3.1/tests/test_safety_rules.py::test_at_least_one_line_is_required PASSED [ 85%]
+Application/V3.1/tests/test_safety_rules.py::test_only_new_lines_can_be_added PASSED [ 87%]
+Application/V3.1/tests/test_safety_rules.py::test_unknown_fields_are_dropped_not_sent_to_odoo PASSED [ 90%]
+Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_created PASSED [ 92%]
+Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_read PASSED [ 95%]
+Application/V3.1/tests/test_safety_rules.py::test_localhost_is_replaced_by_ipv4 PASSED [ 97%]
+Application/V3.1/tests/test_safety_rules.py::test_unreachable_odoo_gives_a_clear_error PASSED [100%]
+
+==================================== PASSES ====================================
+============================= slowest 5 durations ==============================
+3.70s call     Application/V3.1/tests/test_api.py::test_abandoned_approvals_do_not_freeze_the_server
+1.32s call     Application/V3.1/tests/test_api.py::test_twenty_parallel_chats
+1.11s setup    Application/V3.1/tests/test_api.py::test_health_reports_odoo_version
+1.06s call     Application/V3.1/tests/test_api.py::test_unanswered_approval_expires
+0.78s setup    Application/V3.1/tests/test_odoo_client.py::test_filtering_on_a_forbidden_field_is_blocked
+=========================== short test summary info ============================
+PASSED Application/V3.1/tests/test_api.py::test_health_reports_odoo_version
+PASSED Application/V3.1/tests/test_api.py::test_read_customers
+PASSED Application/V3.1/tests/test_api.py::test_fields_sent_as_text_no_longer_break_the_read
+PASSED Application/V3.1/tests/test_api.py::test_reading_system_users_is_refused
+PASSED Application/V3.1/tests/test_api.py::test_approved_invoice_is_draft_with_odoo_price
+PASSED Application/V3.1/tests/test_api.py::test_declined_order_creates_nothing
+PASSED Application/V3.1/tests/test_api.py::test_unknown_customer_is_rejected
+PASSED Application/V3.1/tests/test_api.py::test_twenty_parallel_chats
+PASSED Application/V3.1/tests/test_api.py::test_abandoned_approvals_do_not_freeze_the_server
+PASSED Application/V3.1/tests/test_api.py::test_unanswered_approval_expires
+PASSED Application/V3.1/tests/test_odoo_client.py::test_forty_parallel_reads_all_succeed
+PASSED Application/V3.1/tests/test_odoo_client.py::test_seed_data_is_present
+PASSED Application/V3.1/tests/test_odoo_client.py::test_fields_sent_as_text_still_work
+PASSED Application/V3.1/tests/test_odoo_client.py::test_unknown_or_forbidden_fields_are_left_out
+PASSED Application/V3.1/tests/test_odoo_client.py::test_filtering_on_a_forbidden_field_is_blocked
+PASSED Application/V3.1/tests/test_odoo_client.py::test_reads_are_limited
+PASSED Application/V3.1/tests/test_odoo_client.py::test_odoo_errors_are_short
+PASSED Application/V3.1/tests/test_odoo_client.py::test_invoice_uses_odoo_price_not_ai_price
+PASSED Application/V3.1/tests/test_odoo_client.py::test_sales_order_is_created_as_draft
+PASSED Application/V3.1/tests/test_safety_rules.py::test_odoo_traceback_becomes_one_short_line
+PASSED Application/V3.1/tests/test_safety_rules.py::test_access_error_is_reported_as_not_allowed
+PASSED Application/V3.1/tests/test_safety_rules.py::test_errors_are_value_errors_so_the_agent_handles_them
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[['name', 'email', 'phone']-expected0]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[["name", "id"]-expected1]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[name, email-expected2]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[raw3-expected3]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_ai_price_is_ignored_and_odoo_price_used
+PASSED Application/V3.1/tests/test_safety_rules.py::test_ai_price_kept_only_when_explicitly_allowed
+PASSED Application/V3.1/tests/test_safety_rules.py::test_only_customer_invoices_can_be_created
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[0]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[-2]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[lots]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[None]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_customer_must_be_a_real_odoo_id
+PASSED Application/V3.1/tests/test_safety_rules.py::test_at_least_one_line_is_required
+PASSED Application/V3.1/tests/test_safety_rules.py::test_only_new_lines_can_be_added
+PASSED Application/V3.1/tests/test_safety_rules.py::test_unknown_fields_are_dropped_not_sent_to_odoo
+PASSED Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_created
+PASSED Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_read
+PASSED Application/V3.1/tests/test_safety_rules.py::test_localhost_is_replaced_by_ipv4
+PASSED Application/V3.1/tests/test_safety_rules.py::test_unreachable_odoo_gives_a_clear_error
+============================= 41 passed in 15.10s ==============================

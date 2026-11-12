@@ -133,7 +133,7 @@ Try these in the chat, then **check the answers in Odoo** (Sales → Orders → 
 - The first request after a few minutes of idle is slow (the model unloads).
 - Everyone's AI answers can differ from run to run.
 
-**Fixed in V3.1 compared to the previous group's V3 (see `documentation/BACKEND-CHANGES.md`):**
+**Fixed in V3.1 compared to the previous group's V3 (see `documentation/our-work/changes/BACKEND-CHANGES.md`):**
 - Several people can use the app at the same time (before: requests failed).
 - Closing the browser during an approval no longer freezes the app; unanswered approvals expire after 5 minutes.
 - Prices always come from Odoo, not from the AI.
@@ -149,6 +149,11 @@ cd %USERPROFILE%\Documents\AI-Integrated-ERP
 .venv\Scripts\python.exe -m pytest Application\V3.1\tests -v
 ```
 They use your `Application\V3.1\.env`, need Odoo running with the seed data, and **create a few draft quotations and invoices** in your database. Expected: all passed.
+
+To **record** a run as evidence (saves the full report and prints a line for `documentation/our-work/tests/TEST-RESULTS.md`):
+```
+.venv\Scripts\python.exe Setup\run_tests.py --who yourname
+```
 
 ## If something goes wrong
 

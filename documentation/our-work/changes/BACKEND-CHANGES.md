@@ -37,6 +37,8 @@
 .venv\Scripts\python.exe -m pip install -r Application\V3.1\requirements-dev.txt
 .venv\Scripts\python.exe -m pytest Application\V3.1\tests -v
 ```
+To save the run as evidence, use `.venv\Scripts\python.exe Setup\run_tests.py --who yourname` instead (see [TEST-RESULTS.md](../tests/TEST-RESULTS.md)).
+
 Odoo must be running with the seed data; the tests use `Application\V3.1\.env`. They **create a few draft quotations/invoices** (marked `pytest`). Without Odoo, the Odoo tests are skipped and the 21 offline tests still run.
 
 ## For Marija (AI & chat) – what the AI now receives
