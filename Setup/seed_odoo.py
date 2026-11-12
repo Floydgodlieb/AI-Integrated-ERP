@@ -149,7 +149,7 @@ def main():
     a = ap.parse_args()
 
     env = {**load_env_file(a.env_file), **{k: v for k, v in os.environ.items() if k.startswith("ODOO_")}}
-    url = a.url or env.get("ODOO_URL", "http://localhost:8069")
+    url = a.url or env.get("ODOO_URL", "http://127.0.0.1:8069")
     db = a.db or env.get("ODOO_DB", "odoo")
     user = a.user or env.get("ODOO_USER")
     pw = a.password or env.get("ODOO_PASS")

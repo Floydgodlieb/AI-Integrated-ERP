@@ -118,6 +118,13 @@ def test_other_models_cannot_be_read(offline_client, audit):
     assert [r["event"] for r in audit.read_all()] == ["read_blocked"] * 3
 
 
+def test_localhost_is_replaced_by_ipv4():
+    # Measured on Windows: localhost 2.08 s per new connection, 127.0.0.1 0.03 s.
+    client = OdooClient("http://localhost:8069/", "odoo", "u", "p", connect=False)
+    assert client.url == "http://127.0.0.1:8069"
+    assert OdooClient("https://odoo.example.com", "odoo", "u", "p", connect=False).url == "https://odoo.example.com"
+
+
 def test_unreachable_odoo_gives_a_clear_error():
     with pytest.raises(OdooError) as info:
         OdooClient("http://127.0.0.1:9", "odoo", "ai_agent", "x", timeout=3)

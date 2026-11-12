@@ -63,7 +63,7 @@ notepad Application\V3\.env
 ```
 Set:
 ```
-ODOO_URL=http://localhost:8069
+ODOO_URL=http://127.0.0.1:8069
 ODOO_DB=odoo
 ODOO_USER=ai_agent
 ODOO_PASS=THE-AI-PASSWORD-FROM-STEP-5

@@ -15,6 +15,7 @@
 | 4 | **Create allow-list**: only draft quotations and draft customer invoices; only known fields (others are dropped and reported); `move_type` forced to `out_invoice`; quantity must be > 0; customer and product must be real Odoo ids; only new lines; **prices from Odoo** (`ODOO_ALLOW_AI_PRICES=false`) | Invoice at AI price 10.00 → **Odoo price 50.00**; AI's `"state": "sale"` → ignored, record stays draft |
 | 5 | Approvals **expire** (`APPROVAL_TIMEOUT_SECONDS`, default 300); a closed browser releases its approval immediately | 45 abandoned approvals: **server froze → next chat answers in 0.02 s** |
 | 6 | CORS only for the chat UI; the launcher no longer opens the UI to the network (`UI_ON_NETWORK=1` to opt in) and works on Windows/macOS/Linux; `/api/health` really asks Odoo | `Network: http://192.168.…` exposure gone by default |
+| 1b | **`localhost` → `127.0.0.1`** for the Odoo connection (automatic, also for existing `.env` files); new default everywhere | Measured on Floyd's Windows PC: **2.08 s → 0.03 s per new Odoo connection**. The abandoned-approvals test took 204 s on Windows before this fix |
 | 9 | **Audit log** `Application/V3/logs/audit.jsonl` (git-ignored, append-only): `approval_requested`, `approval_answered`, `approval_expired`, `created`, `create_blocked`, `create_failed`, `read_blocked` | There was no record of who approved what |
 | 10 | **Tests**: `Application/V3/tests/` (offline safety rules + Odoo integration + end-to-end API) | No tests → 40 tests |
 
@@ -41,6 +42,7 @@ Odoo must be running with the seed data; the tests use `Application\V3\.env`. Th
 - A successful create now returns `{"status": "success", "created_id": 12, "state": "draft"}` plus, when something was dropped, `"ignored_fields": [...]` and `"note": "Prices were taken from Odoo, not from the request."`.
 - New approval result: `{"status": "expired", "message": "No approval was given in time. Nothing was created."}`.
 - Refused reads: `{"error": "Reading 'res.users' is not allowed. Allowed: ..."}`.
+- The chat UI's dev proxy (`chat-UI/vite.config.js`) still points at `http://localhost:8001`. Node usually copes with that, but if the chat feels slow on Windows, try `http://127.0.0.1:8001` there (your file, so not changed here).
 - Still on the AI side (unchanged): after a failed tool call the second AI call can still make things up; lost line breaks in the chat; the hard-coded model name.
 
 ## Not done yet (needs the team)

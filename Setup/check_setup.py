@@ -42,15 +42,19 @@ def http_json(url, timeout=5):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--env-file", default=None)
-    ap.add_argument("--ollama-url", default=os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
-    ap.add_argument("--backend-url", default="http://localhost:8001")
+    ap.add_argument("--ollama-url", default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"))
+    ap.add_argument("--backend-url", default="http://127.0.0.1:8001")
     ap.add_argument("--model", default="llama3.1")
     a = ap.parse_args()
 
     env_path = a.env_file or next((p for p in ("Application/V3/.env", ".env", "../.env") if os.path.exists(p)), None)
     env = {**load_env(env_path), **{k: v for k, v in os.environ.items() if k.startswith("ODOO_")}}
     print(f"Using settings from: {env_path or '(environment only)'}\n")
-    url, db = env.get("ODOO_URL", "http://localhost:8069"), env.get("ODOO_DB", "odoo")
+    url, db = env.get("ODOO_URL", "http://127.0.0.1:8069"), env.get("ODOO_DB", "odoo")
+    if "://localhost" in url:
+        line(WARN, "ODOO_URL uses 'localhost': on Windows each new connection then costs ~2 s. "
+                   "Use http://127.0.0.1:8069 in your .env (the V3 backend switches automatically).")
+        url = url.replace("://localhost", "://127.0.0.1", 1)
     user, pw = env.get("ODOO_USER"), env.get("ODOO_PASS")
 
     # 1. Odoo reachable

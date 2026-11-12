@@ -71,13 +71,14 @@ notepad Application\V3\.env
 ```
 Make the file exactly this (use the **AI password** from step D) and save:
 ```
-ODOO_URL=http://localhost:8069
+ODOO_URL=http://127.0.0.1:8069
 ODOO_DB=odoo
 ODOO_USER=ai_agent
 ODOO_PASS=YOUR-AI-PASSWORD
 TEAMS_WEBHOOK_URL=
 ```
 **Leave the last line empty.** (The template contains a fake address that can freeze the app.) Never commit `.env`.
+Use `127.0.0.1`, not `localhost`, in `ODOO_URL`: on Windows each new connection to `localhost` took 2 seconds longer (measured).
 
 ## F. Install V3
 

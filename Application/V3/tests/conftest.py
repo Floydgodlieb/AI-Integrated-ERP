@@ -34,7 +34,7 @@ def _free_port() -> int:
 
 _env_file = dotenv_values(V3_DIR / ".env")
 ODOO = {
-    "url": os.getenv("TEST_ODOO_URL") or _env_file.get("ODOO_URL") or "http://localhost:8069",
+    "url": os.getenv("TEST_ODOO_URL") or _env_file.get("ODOO_URL") or "http://127.0.0.1:8069",
     "db": os.getenv("TEST_ODOO_DB") or _env_file.get("ODOO_DB") or "odoo",
     "user": os.getenv("TEST_ODOO_USER") or _env_file.get("ODOO_USER") or "ai_agent",
     "password": os.getenv("TEST_ODOO_PASS") or _env_file.get("ODOO_PASS") or "",

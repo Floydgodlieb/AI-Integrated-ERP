@@ -26,7 +26,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return os.getenv(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
 
 
-ODOO_URL = os.getenv('ODOO_URL', 'http://localhost:8069')
+ODOO_URL = os.getenv('ODOO_URL', 'http://127.0.0.1:8069')
 ODOO_DB = os.getenv('ODOO_DB', 'odoo')
 ODOO_USER = os.getenv('ODOO_USER', '')
 ODOO_PASS = os.getenv('ODOO_PASS', '')
