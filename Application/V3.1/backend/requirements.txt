@@ -1,0 +1,8 @@
+# Exact versions that were installed and tested (Windows + Python 3.12, Linux + Python 3.13).
+# Change a version on purpose, test, then update it here - so everyone runs the same code.
+fastapi==0.162.2
+uvicorn[standard]==0.54.0
+sse-starlette==3.7.0
+ollama==0.6.3
+python-dotenv==1.2.4
+anyio==4.16.0

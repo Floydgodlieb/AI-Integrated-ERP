@@ -6,4 +6,4 @@ __pycache__/
 
 # Local secrets and logs
 .env
-Application/V3/logs/
+Application/*/logs/

@@ -1,0 +1,4 @@
+# For running the tests:  python -m pip install -r Application/V3.1/requirements-dev.txt
+-r backend/requirements.txt
+pytest==9.2.0
+httpx==0.28.1

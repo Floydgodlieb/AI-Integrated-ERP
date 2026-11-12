@@ -1,5 +1,5 @@
 """
-End-to-end tests of the V3 API: browser -> API -> agent -> (scripted) AI -> Odoo.
+End-to-end tests of the V3.1 API: browser -> API -> agent -> (scripted) AI -> Odoo.
 The AI is the scripted stand-in from fake_ollama.py, so these test the backend, not llama3.1.
 Skipped when Odoo is not running.
 """

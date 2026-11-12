@@ -1,6 +1,6 @@
 """
 DRAFT data contract: what the AI passes to the backend  (Floyd = backend, Marija = AI).
-Single source of truth. When both agree, this file moves to Application/V3/backend/schemas.py.
+Single source of truth. When both agree, this file moves to Application/V3.1/backend/schemas.py.
 
 Design rules (proposal - discuss them in the agreement meeting):
   R1. The AI NEVER sends Odoo IDs, Odoo model names, Odoo field names (partner_id, move_type...) or taxes.

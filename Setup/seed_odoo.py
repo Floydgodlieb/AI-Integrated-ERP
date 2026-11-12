@@ -170,7 +170,7 @@ def main():
             sys.exit("--create-agent-user needs --agent-password")
         print(f"Agent user '{a.agent_login}':", create_agent_user(o, a.agent_login, a.agent_password, a.check))
 
-    print("Done. Next: put the login you want the AI to use into Application/V3/.env")
+    print("Done. Next: put the login you want the AI to use into Application/V3.1/.env")
 
 
 if __name__ == "__main__":

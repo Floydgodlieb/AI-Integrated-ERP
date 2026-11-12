@@ -3,12 +3,12 @@
 check_setup.py - one command that tells you whether the whole chain is ready.
 Read-only: it does NOT create or change anything.
 
-  python check_setup.py                       # reads ODOO_* from Application/V3/.env or ./.env
-  python check_setup.py --env-file Application/V3/.env
+  python check_setup.py                       # reads ODOO_* from Application/V3.1/.env or ./.env
+  python check_setup.py --env-file Application/V3.1/.env
 
 Checks: Odoo reachable + version, login as the AI user, Sales/Invoicing installed,
 seed data present, the AI user is NOT an admin (cannot read system settings),
-Ollama running + model pulled, V3 backend health.
+Ollama running + model pulled, V3.1 backend health.
 """
 import argparse, json, os, sys, urllib.request, xmlrpc.client
 
@@ -47,13 +47,13 @@ def main():
     ap.add_argument("--model", default="llama3.1")
     a = ap.parse_args()
 
-    env_path = a.env_file or next((p for p in ("Application/V3/.env", ".env", "../.env") if os.path.exists(p)), None)
+    env_path = a.env_file or next((p for p in ("Application/V3.1/.env", "Application/V3/.env", ".env", "../.env") if os.path.exists(p)), None)
     env = {**load_env(env_path), **{k: v for k, v in os.environ.items() if k.startswith("ODOO_")}}
     print(f"Using settings from: {env_path or '(environment only)'}\n")
     url, db = env.get("ODOO_URL", "http://127.0.0.1:8069"), env.get("ODOO_DB", "odoo")
     if "://localhost" in url:
         line(WARN, "ODOO_URL uses 'localhost': on Windows each new connection then costs ~2 s. "
-                   "Use http://127.0.0.1:8069 in your .env (the V3 backend switches automatically).")
+                   "Use http://127.0.0.1:8069 in your .env (the V3.1 backend switches automatically).")
         url = url.replace("://localhost", "://127.0.0.1", 1)
     user, pw = env.get("ODOO_USER"), env.get("ODOO_PASS")
 
@@ -115,9 +115,9 @@ def main():
     # 7. backend
     try:
         h = http_json(a.backend_url.rstrip("/") + "/api/health")
-        line(OK if h.get("status") == "ok" else BAD, f"V3 backend health: {h}")
+        line(OK if h.get("status") == "ok" else BAD, f"V3.1 backend health: {h}")
     except Exception:
-        line(WARN, f"V3 backend not running at {a.backend_url} (start it, then run this again)")
+        line(WARN, f"V3.1 backend not running at {a.backend_url} (start it, then run this again)")
     finish()
 
 
