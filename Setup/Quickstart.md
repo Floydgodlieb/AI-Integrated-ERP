@@ -1,6 +1,6 @@
-# Quickstart: run the previous group's V3 on your own Windows PC
+# Quickstart: run V3 on your own Windows PC
 
-**What you get:** the AI chat (V3, exactly as the previous group left it) talking to your own local Odoo 20 with 14 test customers and 14 test products. **No code changes needed.** Takes about 45 minutes, most of it downloading.
+**What you get:** the AI chat (V3) talking to your own local Odoo 20 with 14 test customers and 14 test products. Takes about 45 minutes, most of it downloading.
 
 > This guide was followed step by step on a real Windows 10 PC. Everything is typed into **Command Prompt** (press the Windows key, type `cmd`, press Enter). Not PowerShell.
 
@@ -43,17 +43,17 @@ cd %USERPROFILE%\Documents
 git clone https://github.com/Floydgodlieb/AI-Integrated-ERP.git
 cd AI-Integrated-ERP
 ```
-Then extract **Teammate-Setup-Kit.zip** (from Floyd) **into this folder** (right-click → Extract All → choose the `AI-Integrated-ERP` folder). Check:
+The setup scripts are already in the repo. Check:
 ```
-dir setup
+dir Setup
 ```
-You should see `seed_odoo.py` and `check_setup.py`. *(If the kit is already in the repo after a `git pull`, skip the zip.)*
+You should see `seed_odoo.py` and `check_setup.py`. (If you have an old copy of the repo, run `git pull` first. Don't use the old `Teammate-Setup-Kit.zip` if you still have it: its scripts are outdated.)
 
 ## D. Fill Odoo with the test data
 
 Replace the email/passwords. Choose a new password for the AI user: **only letters, digits and hyphens**. Write it down.
 ```
-python setup\seed_odoo.py --db odoo --user YOUR-ODOO-EMAIL --password "YOUR-ODOO-PASSWORD" --create-agent-user --agent-password "CHOOSE-AI-PASSWORD"
+python Setup\seed_odoo.py --db odoo --user YOUR-ODOO-EMAIL --password "YOUR-ODOO-PASSWORD" --create-agent-user --agent-password "CHOOSE-AI-PASSWORD"
 ```
 Expected last lines:
 ```
@@ -71,13 +71,14 @@ notepad Application\V3\.env
 ```
 Make the file exactly this (use the **AI password** from step D) and save:
 ```
-ODOO_URL=http://localhost:8069
+ODOO_URL=http://127.0.0.1:8069
 ODOO_DB=odoo
 ODOO_USER=ai_agent
 ODOO_PASS=YOUR-AI-PASSWORD
 TEAMS_WEBHOOK_URL=
 ```
 **Leave the last line empty.** (The template contains a fake address that can freeze the app.) Never commit `.env`.
+Use `127.0.0.1`, not `localhost`, in `ODOO_URL`: on Windows each new connection to `localhost` took 2 seconds longer (measured).
 
 ## F. Install V3
 
@@ -103,7 +104,7 @@ Time it with a stopwatch. **The first run is slow** (it loads the model: ~40 s o
 
 ```
 cd %USERPROFILE%\Documents\AI-Integrated-ERP
-python setup\check_setup.py --env-file Application\V3\.env
+python Setup\check_setup.py --env-file Application\V3\.env
 ```
 All lines should be `[ OK ]` (the "V3 backend not running" line is only a warning until step I).
 
@@ -117,22 +118,37 @@ Allow Windows Firewall for **private** networks if asked. Open **http://localhos
 
 ---
 
-## What to expect (important: this is the previous group's unchanged code)
+## What to expect
 
 Try these in the chat, then **check the answers in Odoo** (Sales → Orders → Customers / Quotations; Invoicing → Customers → Invoices):
 
 1. `Show me all customers`
 2. `Create a sales order for Pepsi with 2 Chair` → approval dialog → ✓ → a **draft** quotation appears in Odoo
-3. `Create an invoice for Pepsi with 3 Chair` → approve → a **draft** invoice appears
+3. `Create an invoice for Pepsi with 3 Chair` → approve → a **draft** invoice appears, **priced by Odoo** (Chair = 50.00)
 
-**Known problems of the old version. They are not your fault:**
-- **The AI can make things up.** On our PC, "Show me all customers" failed and the AI then invented customers (John Doe, Jane Smith…) that do not exist. **Always compare with Odoo.** (We have a tested fix, not applied yet.)
-- If the app shows a grey **"Executed"** bubble instead of a table, the request failed.
+**Still true (AI and chat side, not fixed yet). These are not your fault:**
+- **The AI can make things up.** On our PC the AI once invented customers (John Doe, Jane Smith…) after a failed request. **Always compare with Odoo.**
+- If the app shows a grey **"Executed"** bubble instead of a table, the request failed or was refused.
 - Line breaks in answers are lost.
 - The first request after a few minutes of idle is slow (the model unloads).
-- Only **draft** orders and invoices are created. Creating a **new customer** through the chat fails by design (the AI user may not).
-- `main.py` opens the chat to your whole Wi-Fi (`Network:` line). Don't run it on shared or university Wi-Fi.
 - Everyone's AI answers can differ from run to run.
+
+**Fixed in the backend update (Nov 2026; see `documentation/BACKEND-CHANGES.md`):**
+- Several people can use the app at the same time (before: requests failed).
+- Closing the browser during an approval no longer freezes the app; unanswered approvals expire after 5 minutes.
+- Prices always come from Odoo, not from the AI.
+- The AI can only read customers, products, quotations and customer invoices (before: anything, including system settings).
+- Only **draft** quotations and **draft** customer invoices can be created; new customers must be made in Odoo (by design).
+- The chat is only reachable from your own PC (before: your whole Wi-Fi). Use `set UI_ON_NETWORK=1` before starting if you really need it on a phone.
+- Every create and every refused request is logged in `Application\V3\logs\audit.jsonl`.
+
+## Optional: run the backend tests
+```
+cd %USERPROFILE%\Documents\AI-Integrated-ERP
+.venv\Scripts\python.exe -m pip install -r Application\V3\requirements-dev.txt
+.venv\Scripts\python.exe -m pytest Application\V3\tests -v
+```
+They use your `Application\V3\.env`, need Odoo running with the seed data, and **create a few draft quotations and invoices** in your database. Expected: all passed.
 
 ## If something goes wrong
 
