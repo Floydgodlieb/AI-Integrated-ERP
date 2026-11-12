@@ -47,7 +47,7 @@ The setup scripts are already in the repo. Check:
 ```
 dir Setup
 ```
-You should see `seed_odoo.py` and `check_setup.py`. (If you have an old copy of the repo, run `git pull` first. The `Teammate-Setup-Kit.zip` is no longer needed.)
+You should see `seed_odoo.py` and `check_setup.py`. (If you have an old copy of the repo, run `git pull` first. Don't use the old `Teammate-Setup-Kit.zip` if you still have it: its scripts are outdated.)
 
 ## D. Fill Odoo with the test data
 
