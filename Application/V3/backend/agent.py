@@ -1,7 +1,12 @@
 import json
 import ast
+import os
 import threading
 from ollama import chat as ollama_chat
+
+# How long the backend waits for the user to click approve/decline before giving up.
+# Before this setting, an unanswered approval blocked a server thread forever.
+APPROVAL_TIMEOUT_SECONDS = int(os.getenv("APPROVAL_TIMEOUT_SECONDS", "300"))
 
 system_instruction = """
 You are an Odoo ERP API Assistant. Your objective is to help the user manage customers, orders, and sales data.
@@ -115,6 +120,28 @@ class ConversationAgent:
             self.pending_confirms[conv_id]["approved"] = approved
             if conv_id in self.pending_events:
                 self.pending_events[conv_id].set()
+
+    def cancel_pending(self, conv_id: str, reason: str = "cancelled"):
+        """Release a waiting approval (e.g. the browser closed) so its server thread is freed."""
+        pending = self.pending_confirms.get(conv_id)
+        if pending is not None and pending.get("approved") is None:
+            pending["approved"] = False
+            pending["reason"] = reason
+            event = self.pending_events.get(conv_id)
+            if event is not None:
+                event.set()
+
+    def discard_pending(self, conv_id: str, reason: str = "cancelled"):
+        """Remove an approval nobody will wait for anymore (its chat stream was closed)."""
+        pending = self.pending_confirms.pop(conv_id, None)
+        self.pending_events.pop(conv_id, None)
+        if pending is not None:
+            self._audit("approval_expired", conv_id=conv_id, reason=reason)
+
+    def _audit(self, event: str, **data):
+        audit = getattr(self.odoo, "audit", None)
+        if audit is not None:
+            audit.write(event, **data)
 
     def get_or_create_history(self, conv_id: str) -> list:
         if conv_id not in self.conversations:
@@ -273,16 +300,19 @@ class ConversationAgent:
                         "tool_name": tool_name,
                         "tool_args": tool_args
                     }
+                    self._audit("approval_requested", conv_id=conv_id, model=tool_args.get("model", ""),
+                                summary=summary, user_message=user_message)
                     yield {"type": "confirmation_required", "content": json.dumps({
                         "summary": summary,
                         "model": tool_args.get("model", ""),
                         "values": tool_args.get("values", {})
                     }, default=str)}
 
-                    event.wait()
+                    answered = event.wait(timeout=APPROVAL_TIMEOUT_SECONDS)
 
-                    approved = self.pending_confirms[conv_id]["approved"]
-                    del self.pending_confirms[conv_id]
+                    pending = self.pending_confirms.pop(conv_id, None) or {}
+                    self.pending_events.pop(conv_id, None)
+                    approved = bool(answered and pending.get("approved"))
 
                     if approved:
                         yield {"type": "status", "content": "Executing create..."}
@@ -290,6 +320,11 @@ class ConversationAgent:
                             tool_result = self.execute_create(tool_args)
                         except Exception as e:
                             tool_result = {"error": str(e)}
+                    elif not answered or pending.get("reason"):
+                        reason = pending.get("reason") or "timeout"
+                        self._audit("approval_expired", conv_id=conv_id, reason=reason)
+                        tool_result = {"status": "expired",
+                                       "message": "No approval was given in time. Nothing was created."}
                     else:
                         tool_result = {"status": "cancelled", "message": "User declined the create operation"}
 

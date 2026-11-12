@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Local secrets and logs
+.env
+Application/V3/logs/
