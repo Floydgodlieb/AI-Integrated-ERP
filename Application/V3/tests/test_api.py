@@ -123,11 +123,19 @@ def test_abandoned_approvals_do_not_freeze_the_server(api):
     # Before: after 40 browsers closed during an approval, every new chat hung forever.
     base, backend_main = api
     for i in range(45):
+        started = time.time()
+        received = ""
         with httpx.stream("POST", f"{base}/api/chat", json={"message": "create an order for pepsi",
                                                             "conversation_id": f"gone-{i}"}, timeout=15) as r:
             for chunk in r.iter_text():
-                if "confirmation_required" in chunk:
+                received += chunk                    # the word can arrive split over two pieces (seen on Windows)
+                if "confirmation_required" in received:
                     break                            # close the connection without answering
+                # The server's keep-alive pings stop httpx timing out, so check the time ourselves.
+                assert time.time() - started < 20, (
+                    f"request {i + 1} of 45 got no approval prompt within 20 s - the server is probably out of "
+                    f"free workers (abandoned approvals not released). Received so far: {received[-200:]!r}")
+        assert "confirmation_required" in received, f"request {i + 1}: stream ended without an approval prompt"
     time.sleep(1.5)
     started = time.time()
     events = chat(base, "hello", "after-abandon", timeout=10)
