@@ -1,6 +1,6 @@
-# Quickstart: run V3 on your own Windows PC
+# Quickstart: run V3.1 on your own Windows PC
 
-**What you get:** the AI chat (V3) talking to your own local Odoo 20 with 14 test customers and 14 test products. Takes about 45 minutes, most of it downloading.
+**What you get:** the AI chat (V3.1: our improved version of the previous group's V3) talking to your own local Odoo 20 with 14 test customers and 14 test products. Takes about 45 minutes, most of it downloading.
 
 > This guide was followed step by step on a real Windows 10 PC. Everything is typed into **Command Prompt** (press the Windows key, type `cmd`, press Enter). Not PowerShell.
 
@@ -63,11 +63,11 @@ Agent user 'ai_agent': created
 ```
 Safe to run again (it never creates duplicates). Add `--check` to only look.
 
-## E. Tell V3 how to reach Odoo
+## E. Tell V3.1 how to reach Odoo
 
 ```
-copy Application\V3\.env.example Application\V3\.env
-notepad Application\V3\.env
+copy Application\V3.1\.env.example Application\V3.1\.env
+notepad Application\V3.1\.env
 ```
 Make the file exactly this (use the **AI password** from step D) and save:
 ```
@@ -80,12 +80,12 @@ TEAMS_WEBHOOK_URL=
 **Leave the last line empty.** (The template contains a fake address that can freeze the app.) Never commit `.env`.
 Use `127.0.0.1`, not `localhost`, in `ODOO_URL`: on Windows each new connection to `localhost` took 2 seconds longer (measured).
 
-## F. Install V3
+## F. Install V3.1
 
 ```
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r Application\V3\backend\requirements.txt
-cd Application\V3\chat-UI
+.venv\Scripts\python.exe -m pip install -r Application\V3.1\backend\requirements.txt
+cd Application\V3.1\chat-UI
 npm install
 cd ..\..\..
 ```
@@ -104,14 +104,14 @@ Time it with a stopwatch. **The first run is slow** (it loads the model: ~40 s o
 
 ```
 cd %USERPROFILE%\Documents\AI-Integrated-ERP
-python Setup\check_setup.py --env-file Application\V3\.env
+python Setup\check_setup.py --env-file Application\V3.1\.env
 ```
-All lines should be `[ OK ]` (the "V3 backend not running" line is only a warning until step I).
+All lines should be `[ OK ]` (the "V3.1 backend not running" line is only a warning until step I).
 
 ## I. Start the app
 
 ```
-cd %USERPROFILE%\Documents\AI-Integrated-ERP\Application\V3
+cd %USERPROFILE%\Documents\AI-Integrated-ERP\Application\V3.1
 ..\..\.venv\Scripts\python.exe main.py
 ```
 Allow Windows Firewall for **private** networks if asked. Open **http://localhost:5173**. Stop with **Ctrl+C**.
@@ -133,22 +133,22 @@ Try these in the chat, then **check the answers in Odoo** (Sales → Orders → 
 - The first request after a few minutes of idle is slow (the model unloads).
 - Everyone's AI answers can differ from run to run.
 
-**Fixed in the backend update (Nov 2026; see `documentation/BACKEND-CHANGES.md`):**
+**Fixed in V3.1 compared to the previous group's V3 (see `documentation/BACKEND-CHANGES.md`):**
 - Several people can use the app at the same time (before: requests failed).
 - Closing the browser during an approval no longer freezes the app; unanswered approvals expire after 5 minutes.
 - Prices always come from Odoo, not from the AI.
 - The AI can only read customers, products, quotations and customer invoices (before: anything, including system settings).
 - Only **draft** quotations and **draft** customer invoices can be created; new customers must be made in Odoo (by design).
 - The chat is only reachable from your own PC (before: your whole Wi-Fi). Use `set UI_ON_NETWORK=1` before starting if you really need it on a phone.
-- Every create and every refused request is logged in `Application\V3\logs\audit.jsonl`.
+- Every create and every refused request is logged in `Application\V3.1\logs\audit.jsonl`.
 
 ## Optional: run the backend tests
 ```
 cd %USERPROFILE%\Documents\AI-Integrated-ERP
-.venv\Scripts\python.exe -m pip install -r Application\V3\requirements-dev.txt
-.venv\Scripts\python.exe -m pytest Application\V3\tests -v
+.venv\Scripts\python.exe -m pip install -r Application\V3.1\requirements-dev.txt
+.venv\Scripts\python.exe -m pytest Application\V3.1\tests -v
 ```
-They use your `Application\V3\.env`, need Odoo running with the seed data, and **create a few draft quotations and invoices** in your database. Expected: all passed.
+They use your `Application\V3.1\.env`, need Odoo running with the seed data, and **create a few draft quotations and invoices** in your database. Expected: all passed.
 
 ## If something goes wrong
 

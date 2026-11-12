@@ -1,6 +1,6 @@
-# Odoo 20 Community + V3 – reproducible setup
+# Odoo 20 Community + V3.1 – reproducible setup
 
-Goal: every team member gets the **same** fresh Odoo with the **same** test customers and products, connected to the V3 app, and can prove it works with one command.
+Goal: every team member gets the **same** fresh Odoo with the **same** test customers and products, connected to the V3.1 app (our improved version of the previous group's V3), and can prove it works with one command.
 
 **What was verified and what was not (be aware):**
 - ✅ Verified by me on Linux with Docker: Odoo **20.0-20261102** (official `odoo:20.0` image) + **PostgreSQL 17**, `seed_odoo.py` (idempotent, run twice), the limited `ai_agent` user, `check_setup.py`, and the V3 backend creating a draft order and draft invoice as `ai_agent` (with a **scripted stand-in** for the AI model).
@@ -56,10 +56,10 @@ Dry run first if you like: add `--check`.
 
 **Why a separate `ai_agent` user:** the old code ran as an administrator. `ai_agent` has only *Sales: all documents* and *Invoicing* rights. I tested that it can create draft orders/invoices but is **blocked** from system settings, scheduled jobs and internal tables, and cannot create users **or customers** (so "customer not found" must be handled by a person – decision D5 in the data contract). It can still **read** all customers, orders and invoices, so the backend allow-list is still needed.
 
-## 6. Configure V3
+## 6. Configure V3.1
 ```powershell
-copy Application\V3\.env.example Application\V3\.env
-notepad Application\V3\.env
+copy Application\V3.1\.env.example Application\V3.1\.env
+notepad Application\V3.1\.env
 ```
 Set:
 ```
@@ -71,11 +71,11 @@ TEAMS_WEBHOOK_URL=
 ```
 Leave `TEAMS_WEBHOOK_URL` empty (the old webhook was leaked; never use it). **`.env` is git-ignored – never commit it.**
 
-## 7. Install and start V3
+## 7. Install and start V3.1
 ```powershell
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r Application\V3\backend\requirements.txt
-cd Application\V3\chat-UI
+.venv\Scripts\python.exe -m pip install -r Application\V3.1\backend\requirements.txt
+cd Application\V3.1\chat-UI
 npm install
 cd ..
 python main.py
@@ -91,7 +91,7 @@ ollama run llama3.1 "Say hello in five words"
 
 ## 9. Verify everything with one command
 ```powershell
-python Setup\check_setup.py --env-file Application\V3\.env
+python Setup\check_setup.py --env-file Application\V3.1\.env
 ```
 Expected: all `[ OK ]` (Odoo version, login as `ai_agent`, apps, 14 customers, 14 products, "cannot read system settings", Ollama + model, backend health). Read-only; changes nothing. `[WARN]` for the backend just means it isn't running.
 
@@ -99,7 +99,7 @@ Expected: all `[ OK ]` (Odoo version, login as `ai_agent`, apps, 14 customers, 1
 1. "Show me all customers" → a table with your 14 customers.
 2. "Create a sales order for Pepsi with 2 Chair" → approval dialog → ✓ → in Odoo: **Sales → Orders → Quotations** shows a **draft** quotation for Pepsi.
 3. "Create an invoice for Pepsi with 3 Chair" → approve → Odoo **Invoicing → Customers → Invoices** shows a **draft** invoice.
-4. Known behaviour of V3 (see handover report): the price the AI gives is trusted, matching is fuzzy, creating a *new customer* will fail for `ai_agent`. These are what the next sprints fix. The real Llama 3.1 may format things differently than my scripted tests – note anything odd in the experiment log.
+4. Known behaviour of V3.1: prices come from Odoo (not from the AI), only draft quotations/invoices are created, name matching is still fuzzy, creating a *new customer* fails for `ai_agent` (by design). The real Llama 3.1 can still make up details in its written answers – compare with Odoo and note anything odd in `documentation/EXPERIMENT-LOG.md`.
 
 ## 10. Record what you actually used (fill in – this is your reproducibility proof)
 | Item | Value | Date | Who |

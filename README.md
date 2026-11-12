@@ -1,5 +1,16 @@
 # AI-Integrated-ERP
 
+## Versions in this repository
+| Folder | What | Status |
+|---|---|---|
+| `Application/V1`, `Application/V2` | Previous group's early prototypes (contain leaked credentials – never reuse them) | Archive |
+| `Application/V3` | Previous group's final version, **unchanged** (kept for before/after comparison) | Archive |
+| `Application/V3.1` | **Our current version**: V3 with a hardened backend (safe Odoo access, prices from Odoo, expiring approvals, audit log, tests) | **Use this** |
+
+Start here: `Setup/Quickstart.md` (setup), `documentation/BACKEND-CHANGES.md` (what changed), `documentation/EXPERIMENT-LOG.md` (measurements).
+
+---
+
 Project Charter: Minor Data Driven Decision Making
 (M3DM)
 Project Name: AI-Integrated ERP (“Invisible ERP”)

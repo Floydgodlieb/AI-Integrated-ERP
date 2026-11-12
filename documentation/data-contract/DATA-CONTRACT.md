@@ -4,7 +4,7 @@
 **Status:** DRAFT v0.1 – nothing here is final until both of you tick the boxes in §3 and merge `schemas.py`.
 
 ## 1. Why this matters (in 5 lines)
-Today the AI sends free-form data to the backend: any Odoo model, any field, names or IDs, prices it invents (`Application/V3/backend/agent.py`). That caused the problems in the handover report (wrong matches, trusted prices, read-anything). A **contract** fixes it: the AI may only produce a small, strict JSON shape; the backend checks it, and the backend – not the AI – talks to Odoo.
+Today the AI sends free-form data to the backend: any Odoo model, any field, names or IDs, prices it invents (`Application/V3.1/backend/agent.py`). That caused the problems in the handover report (wrong matches, trusted prices, read-anything). A **contract** fixes it: the AI may only produce a small, strict JSON shape; the backend checks it, and the backend – not the AI – talks to Odoo.
 
 ```
 User text ─► AI (Marija) ─► JSON that follows the contract ─► Backend (Floyd): validate, look up in Odoo, price, duplicates
@@ -51,7 +51,7 @@ Each has my **recommended default** – change it if you have a better reason.
 | D7 | Quantities: positive numbers; decimals allowed? | `> 0`, decimals allowed | Floyd | ☐ |
 | D8 | `lookup` is a **named query** (`customers`, `products`, `sales_orders`, `invoices`) + search text, never a free Odoo model/domain | Yes | Floyd | ☐ |
 | D9 | Language of user input | English first; Dutch later (product names stay as written) | Marija + Tijn | ☐ |
-| D10 | Where the schema lives + who may change it | `Application/V3/backend/schemas.py`; changes via PR, **both** review, bump `schema_version` | both | ☐ |
+| D10 | Where the schema lives + who may change it | `Application/V3.1/backend/schemas.py`; changes via PR, **both** review, bump `schema_version` | both | ☐ |
 | D11 | Confidence scores from the AI | **No** in v1 (small models' self-reported confidence isn't reliable); use validation + clarification instead | Marija | ☐ |
 | D12 | Error codes & warnings list (§2 table + `Warning_` codes) | Keep list small; add only with a test | Floyd | ☐ |
 
@@ -68,7 +68,7 @@ Each has my **recommended default** – change it if you have a better reason.
 - **Anastasia:** converts `contract_examples.json` into the first rows of the 50-prompt test set (`user_says`, expected action, expected outcome).
 
 ## 6. How this plugs into the existing code
-| Today (`Application/V3/backend/`) | After the contract |
+| Today (`Application/V3.1/backend/`) | After the contract |
 |---|---|
 | `agent.py` `odoo_create(model, values)` – free object | one tool/format that must validate as `AIEnvelope` |
 | `agent.py` `resolve_entities()` `ilike` first hit | resolver with D3 rules, returns candidates |

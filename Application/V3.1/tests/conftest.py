@@ -8,7 +8,7 @@ Two kinds of tests:
 
 Login for the Odoo tests comes from, in this order:
   TEST_ODOO_URL / TEST_ODOO_DB / TEST_ODOO_USER / TEST_ODOO_PASS environment variables, or
-  Application/V3/.env  (the same file the app uses).
+  Application/V3.1/.env  (the same file the app uses).
 
 NOTE: the Odoo tests create a few DRAFT quotations and invoices in that database.
 Use a test database, or restore your backup afterwards, if that matters to you.
@@ -22,8 +22,8 @@ from pathlib import Path
 import pytest
 from dotenv import dotenv_values
 
-V3_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(V3_DIR))                     # so "import backend..." works
+APP_DIR = Path(__file__).resolve().parent.parent   # Application/V3.1
+sys.path.insert(0, str(APP_DIR))                     # so "import backend..." works
 
 
 def _free_port() -> int:
@@ -32,7 +32,7 @@ def _free_port() -> int:
         return s.getsockname()[1]
 
 
-_env_file = dotenv_values(V3_DIR / ".env")
+_env_file = dotenv_values(APP_DIR / ".env")
 ODOO = {
     "url": os.getenv("TEST_ODOO_URL") or _env_file.get("ODOO_URL") or "http://127.0.0.1:8069",
     "db": os.getenv("TEST_ODOO_DB") or _env_file.get("ODOO_DB") or "odoo",
@@ -63,7 +63,7 @@ def _odoo_reachable() -> bool:
 @pytest.fixture(scope="session")
 def odoo_settings():
     if not ODOO["password"]:
-        pytest.skip("No Odoo password: create Application/V3/.env or set TEST_ODOO_PASS")
+        pytest.skip("No Odoo password: create Application/V3.1/.env or set TEST_ODOO_PASS")
     if not _odoo_reachable():
         pytest.skip(f"Odoo not reachable at {ODOO['url']}")
     return ODOO

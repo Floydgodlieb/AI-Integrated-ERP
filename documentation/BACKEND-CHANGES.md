@@ -1,6 +1,8 @@
 # Backend changes – November 2026 (stages 0–6, 9, 10)
 
-**Scope:** backend only (`Application/V3/backend/odoo_client.py`, `main.py`, new `audit.py`, the launcher, settings, tests).
+> **Where the code is:** these changes are **V3.1** in `Application/V3.1/`. `Application/V3/` is the previous group's original V3, kept **unchanged** for comparison (before/after measurements). Do new work in V3.1.
+
+**Scope:** backend only (`Application/V3.1/backend/odoo_client.py`, `main.py`, new `audit.py`, the launcher, settings, tests).
 **Not touched:** the AI prompt, tool definitions, model choice, the chat screen. Two small edits in `agent.py` (approval expiry + audit lines) are the only exceptions.
 **Tested:** 40 automated tests, all passing, against Odoo 20 Community with the seed data, on Python 3.11 and 3.13. The AI in the tests is a scripted stand-in (`tests/fake_ollama.py`), not llama3.1.
 
@@ -16,26 +18,26 @@
 | 5 | Approvals **expire** (`APPROVAL_TIMEOUT_SECONDS`, default 300); a closed browser releases its approval immediately | 45 abandoned approvals: **server froze → next chat answers in 0.02 s** |
 | 6 | CORS only for the chat UI; the launcher no longer opens the UI to the network (`UI_ON_NETWORK=1` to opt in) and works on Windows/macOS/Linux; `/api/health` really asks Odoo | `Network: http://192.168.…` exposure gone by default |
 | 1b | **`localhost` → `127.0.0.1`** for the Odoo connection (automatic, also for existing `.env` files); new default everywhere | Measured on Floyd's Windows PC: **2.08 s → 0.03 s per new Odoo connection**. The abandoned-approvals test took 204 s on Windows before this fix |
-| 9 | **Audit log** `Application/V3/logs/audit.jsonl` (git-ignored, append-only): `approval_requested`, `approval_answered`, `approval_expired`, `created`, `create_blocked`, `create_failed`, `read_blocked` | There was no record of who approved what |
-| 10 | **Tests**: `Application/V3/tests/` (offline safety rules + Odoo integration + end-to-end API) | No tests → 40 tests |
+| 9 | **Audit log** `Application/V3.1/logs/audit.jsonl` (git-ignored, append-only): `approval_requested`, `approval_answered`, `approval_expired`, `created`, `create_blocked`, `create_failed`, `read_blocked` | There was no record of who approved what |
+| 10 | **Tests**: `Application/V3.1/tests/` (offline safety rules + Odoo integration + end-to-end API) | No tests → 40 tests |
 
-## Settings (all optional, in `Application/V3/.env`)
+## Settings (all optional, in `Application/V3.1/.env`)
 | Setting | Default | Meaning |
 |---|---|---|
 | `ODOO_TIMEOUT` | 30 | Seconds to wait for Odoo |
 | `ODOO_READ_LIMIT` | 50 | Max records per AI read |
 | `ODOO_ALLOW_AI_PRICES` | false | `true` = keep a price the AI sends |
 | `APPROVAL_TIMEOUT_SECONDS` | 300 | Wait for approve/decline |
-| `AUDIT_LOG_PATH` | logs/audit.jsonl | Relative to `Application/V3` |
+| `AUDIT_LOG_PATH` | logs/audit.jsonl | Relative to `Application/V3.1` |
 | `CORS_ORIGINS` | http://localhost:5173,http://127.0.0.1:5173 | Browser origins allowed |
 | `UI_ON_NETWORK` | (unset) | `1` = launcher opens the UI to the network |
 
 ## How to run the tests (Windows, Command Prompt, from the repo root)
 ```
-.venv\Scripts\python.exe -m pip install -r Application\V3\requirements-dev.txt
-.venv\Scripts\python.exe -m pytest Application\V3\tests -v
+.venv\Scripts\python.exe -m pip install -r Application\V3.1\requirements-dev.txt
+.venv\Scripts\python.exe -m pytest Application\V3.1\tests -v
 ```
-Odoo must be running with the seed data; the tests use `Application\V3\.env`. They **create a few draft quotations/invoices** (marked `pytest`). Without Odoo, the Odoo tests are skipped and the 21 offline tests still run.
+Odoo must be running with the seed data; the tests use `Application\V3.1\.env`. They **create a few draft quotations/invoices** (marked `pytest`). Without Odoo, the Odoo tests are skipped and the 21 offline tests still run.
 
 ## For Marija (AI & chat) – what the AI now receives
 - Tool errors keep the same shape `{"error": "..."}`, but the message is short and readable.
@@ -48,10 +50,10 @@ Odoo must be running with the seed data; the tests use `Application\V3\.env`. Th
 ### Task for Marija: the approval box hides what you approve (found in the first real test, 12 Nov 2026)
 **Problem.** With the real llama3.1, the approval box showed only *"Create Invoice | Customer: Pepsi | 1 in…"*. The text is cut off, and even the full text does not say which product, how many, or at what price. A human cannot check what they approve, which defeats the point of the approval step.
 
-**Cause 1 – display** (`Application/V3/chat-UI/src/Chat.css`): `.confirm-detail` has `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` inside `.confirm-dialog` with `max-width: 400px`.
+**Cause 1 – display** (`Application/V3.1/chat-UI/src/Chat.css`): `.confirm-detail` has `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` inside `.confirm-dialog` with `max-width: 400px`.
 Suggested fix: remove those three lines (or use `white-space: pre-wrap`) and widen the dialog (e.g. `max-width: 560px`).
 
-**Cause 2 – content** (`Application/V3/backend/agent.py`, `_summarize_create`): it only counts lines ("1 invoice line(s)").
+**Cause 2 – content** (`Application/V3.1/backend/agent.py`, `_summarize_create`): it only counts lines ("1 invoice line(s)").
 Suggested fix: list each line as *product × quantity @ price*, with the price taken from Odoo (`product.product` `list_price`, "excl. tax"), and warn when the AI tried to set its own price. This matches `needs_approval` in the data-contract draft (lines, totals, warnings). Agree the exact layout with Floyd.
 
 **Related, seen in the same test:**

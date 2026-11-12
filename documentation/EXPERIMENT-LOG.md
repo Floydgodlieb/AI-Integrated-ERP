@@ -4,7 +4,7 @@ One entry per experiment: **what we expected → what we changed → what we mea
 This log is part of our grading evidence (growth, learning, experimentation), so add every experiment, including the failures.
 
 **How to add an entry:** copy the template at the bottom, give it the next number, fill in all columns, commit.
-Always write **where** it was measured (whose PC / which environment) and whether the **real AI** or the **scripted stand-in** (`Application/V3/tests/fake_ollama.py`) was used.
+Always write **where** it was measured (whose PC / which environment) and whether the **real AI** or the **scripted stand-in** (`Application/V3.1/tests/fake_ollama.py`) was used.
 
 ## Environments
 | Code | What |
