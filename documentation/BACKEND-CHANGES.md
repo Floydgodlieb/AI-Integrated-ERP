@@ -45,6 +45,19 @@ Odoo must be running with the seed data; the tests use `Application\V3\.env`. Th
 - The chat UI's dev proxy (`chat-UI/vite.config.js`) still points at `http://localhost:8001`. Node usually copes with that, but if the chat feels slow on Windows, try `http://127.0.0.1:8001` there (your file, so not changed here).
 - Still on the AI side (unchanged): after a failed tool call the second AI call can still make things up; lost line breaks in the chat; the hard-coded model name.
 
+### Task for Marija: the approval box hides what you approve (found in the first real test, 12 Nov 2026)
+**Problem.** With the real llama3.1, the approval box showed only *"Create Invoice | Customer: Pepsi | 1 in…"*. The text is cut off, and even the full text does not say which product, how many, or at what price. A human cannot check what they approve, which defeats the point of the approval step.
+
+**Cause 1 – display** (`Application/V3/chat-UI/src/Chat.css`): `.confirm-detail` has `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` inside `.confirm-dialog` with `max-width: 400px`.
+Suggested fix: remove those three lines (or use `white-space: pre-wrap`) and widen the dialog (e.g. `max-width: 560px`).
+
+**Cause 2 – content** (`Application/V3/backend/agent.py`, `_summarize_create`): it only counts lines ("1 invoice line(s)").
+Suggested fix: list each line as *product × quantity @ price*, with the price taken from Odoo (`product.product` `list_price`, "excl. tax"), and warn when the AI tried to set its own price. This matches `needs_approval` in the data-contract draft (lines, totals, warnings). Agree the exact layout with Floyd.
+
+**Related, seen in the same test:**
+- Created records show a grey **"Executed"** bubble; a short "Created draft quotation S00003" would be clearer.
+- The AI wrote *"Order Name: (Untitled)"*: the create result only contains the id, so the AI invented a name. (Backend option for Floyd: return Odoo's real name, e.g. `S00003`, in the create result.)
+
 ## Not done yet (needs the team)
 - **Stage 7 – name matching** (exact match first, "did you mean …?"): needs the data-contract decision D3 and a way for the chat to show the question.
 - **Stage 8 – duplicate check**: needs a decision on block vs. warn and a warning in the approval screen.
