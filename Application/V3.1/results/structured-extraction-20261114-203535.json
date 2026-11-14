@@ -1,0 +1,43 @@
+{
+  "model": "llama3.1",
+  "ollama_url": "http://127.0.0.1:11434/api/chat",
+  "schema_version": "0.1",
+  "recorded_at_utc": "2026-11-14T19:35:29.262802+00:00",
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.14.7"
+  },
+  "counts": {
+    "prompts": 1,
+    "valid_schema": 0,
+    "correct_action": 1,
+    "correct_expected_fields": 0
+  },
+  "latency_ms": {
+    "first_request": 66892.5,
+    "median_after_first": null,
+    "all_requests_median": 66892.5
+  },
+  "results": [
+    {
+      "id": "E01_clean_invoice",
+      "user_says": "Invoice Pepsi for 3 chairs",
+      "valid_schema": false,
+      "action_correct": true,
+      "expected_fields_correct": false,
+      "request_ms": 66892.5,
+      "ollama_total_ms": 66056.6,
+      "output": {
+        "schema_version": "0.1",
+        "result": {
+          "action": "create_invoice",
+          "customer_name": "Pepsi",
+          "invoice_date": "2023-02-20",
+          "reason": "3 chairs"
+        }
+      }
+    }
+  ]
+}

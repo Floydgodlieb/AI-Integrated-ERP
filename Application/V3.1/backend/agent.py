@@ -1,42 +1,23 @@
 import json
 import ast
 import os
+import re
 import threading
+import time
+from datetime import date
 from ollama import chat as ollama_chat
 
 # How long the backend waits for the user to click approve/decline before giving up.
 # Before this setting, an unanswered approval blocked a server thread forever.
 APPROVAL_TIMEOUT_SECONDS = int(os.getenv("APPROVAL_TIMEOUT_SECONDS", "300"))
 
-system_instruction = """
-You are an Odoo ERP API Assistant. Your objective is to help the user manage customers, orders, and sales data.
+system_instruction = """Turn each user request into one structured Odoo action.
 
-CONVERSATIONAL RULES:
-- Talk to the user normally to understand what they want to achieve.
-- If the user says something vague like "I want to add a sale" or "Create an invoice", ask them for the missing details first (Customer, Products, Quantities).
-- When you receive tool results from the system, summarize them conversationally. Do NOT output raw JSON or tool call syntax.
-- Keep responses concise and natural. List data in a readable way, not as code blocks.
-
-STRICT TOOL RULES:
-- domain MUST be a real array list structure, not a raw string.
-- NEVER use SQL commands or raw timestamps like NOW() inside the domain. Use static text dates like '2026-01-01 00:00:00' if filtering by date.
-- NEVER use "*" in fields. Always return explicit field names.
-
-ENTITY RESOLUTION RULE:
-- When creating records, pass customer names and product names as plain strings — NOT IDs.
-- The system will automatically look up the correct IDs for you.
-- Example: use "partner_id": "Pepsi" instead of "partner_id": 73
-- Example: use "product_id": "Chair Floor Protection" instead of "product_id": 2
-
-Odoo model maps:
-- sales orders -> sale.order
-- customers -> res.partner
-- invoices -> account.move
-
-CRITICAL FIELDS NOTICE:
-- Do NOT mix sale.order and account.move fields!
-- If creating a customer invoice, use model "account.move" and set "move_type": "out_invoice".
-- Do NOT use "move_type" if the model is "sale.order".
+- Send customer and product names with quantities. Never send Odoo IDs or prices.
+- Use a named lookup for ERP facts. Never invent customers, products, prices, or results.
+- Ask one short question if required details are missing or unclear.
+- Prepare only draft customer invoices and sales orders. The backend checks names and prices.
+- Never post, pay, delete, or update records. Refuse unsupported requests.
 """
 
 odoo_search_read_tool = {
@@ -90,7 +71,66 @@ odoo_create_tool = {
     }
 }
 
-TOOLS = [odoo_search_read_tool, odoo_create_tool]
+def _tool(name: str, description: str, properties: dict, required: list[str]) -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": name,
+            "description": description,
+            "parameters": {
+                "type": "object",
+                "properties": properties,
+                "required": required,
+                "additionalProperties": False,
+            },
+        },
+    }
+
+
+LINE_PROPERTIES = {
+    "product_name": {"type": "string", "description": "Product name, not an Odoo ID."},
+    "quantity": {"type": "number", "exclusiveMinimum": 0},
+}
+LINE_SCHEMA = {
+    "type": "object",
+    "properties": LINE_PROPERTIES,
+    "required": ["product_name", "quantity"],
+    "additionalProperties": False,
+}
+
+TOOLS = [
+    _tool("create_invoice", "Prepare a draft customer invoice after checking its details.", {
+        "customer_name": {"type": "string", "minLength": 1},
+        "lines": {"type": "array", "minItems": 1, "items": LINE_SCHEMA},
+        "invoice_date": {"type": ["string", "null"], "description": "ISO date YYYY-MM-DD, or null."},
+    }, ["customer_name", "lines", "invoice_date"]),
+    _tool("create_sales_order", "Prepare a draft sales order after checking its details.", {
+        "customer_name": {"type": "string", "minLength": 1},
+        "lines": {"type": "array", "minItems": 1, "items": LINE_SCHEMA},
+    }, ["customer_name", "lines"]),
+    _tool("lookup_records", "Look up customers, products, sales orders, or customer invoices.", {
+        "what": {"type": "string", "enum": ["customers", "products", "sales_orders", "invoices"]},
+        "search_text": {"type": ["string", "null"]},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+    }, ["what", "search_text", "limit"]),
+    _tool("ask_clarification", "Ask one short question when required information is missing.", {
+        "question": {"type": "string", "minLength": 1},
+    }, ["question"]),
+    _tool("refuse_request", "Refuse unsupported actions or access to unsupported data.", {
+        "reason": {"type": "string", "minLength": 1},
+    }, ["reason"]),
+]
+
+
+class _Function:
+    def __init__(self, name: str, arguments: dict):
+        self.name = name
+        self.arguments = arguments
+
+
+class _ToolCall:
+    def __init__(self, name: str, arguments: dict):
+        self.function = _Function(name, arguments)
 
 FIELD_MODEL_MAP = {
     "partner_id": "res.partner",
@@ -106,6 +146,13 @@ MODEL_LABELS = {
 }
 
 NESTED_LINE_FIELDS = {"order_line", "invoice_line_ids"}
+
+LOOKUP_CONFIG = {
+    "customers": ("res.partner", ["id", "name", "email", "city"]),
+    "products": ("product.product", ["id", "name", "default_code", "list_price"]),
+    "sales_orders": ("sale.order", ["id", "name", "partner_id", "state", "amount_total"]),
+    "invoices": ("account.move", ["id", "name", "partner_id", "invoice_date", "state", "amount_total"]),
+}
 
 
 class ConversationAgent:
@@ -166,6 +213,9 @@ class ConversationAgent:
         fields = args.get("fields", ["name", "id"])
         if not fields or "*" in fields:
             fields = ["name", "id"]
+        limit = args.get("limit")
+        if isinstance(limit, int) and not isinstance(limit, bool):
+            return self.odoo.search_read(args["model"], domain, fields, limit=limit)
         return self.odoo.search_read(args["model"], domain, fields)
 
     def execute_create(self, args: dict):
@@ -259,20 +309,161 @@ class ConversationAgent:
                 parts.append(f"{k}: {v}")
         return " | ".join(parts)
 
+    def _lookup_args(self, args: dict) -> dict:
+        what = args.get("what")
+        if what not in LOOKUP_CONFIG:
+            raise ValueError("Choose customers, products, sales orders, or invoices to search.")
+
+        model, fields = LOOKUP_CONFIG[what]
+        search_text = args.get("search_text")
+        if search_text is not None and not isinstance(search_text, str):
+            raise ValueError("Search text must be a name or reference.")
+        limit = args.get("limit", 10)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
+            raise ValueError("Search limit must be between 1 and 50.")
+
+        if what == "customers":
+            domain = [["customer_rank", ">", 0]]
+            if search_text:
+                domain.extend(["|", ["name", "ilike", search_text], ["city", "ilike", search_text]])
+        elif what == "products":
+            domain = ["|", ["name", "ilike", search_text], ["default_code", "ilike", search_text]] if search_text else []
+        else:
+            domain = [["name", "ilike", search_text]] if search_text else []
+
+        return {"model": model, "domain": domain, "fields": fields, "limit": limit}
+
+    def _map_intent(self, name: str, args: dict, user_message: str):
+        if not isinstance(args, dict):
+            return None, "I couldn't read that request. Please try saying it another way."
+
+        if name == "ask_clarification":
+            question = args.get("question")
+            return None, question.strip() if isinstance(question, str) and question.strip() else "What would you like me to do in Odoo?"
+        if name == "refuse_request":
+            reason = args.get("reason")
+            return None, reason.strip() if isinstance(reason, str) and reason.strip() else "I can't do that action in this app."
+        if name == "lookup_records":
+            try:
+                return "odoo_search_read", self._lookup_args(args)
+            except ValueError as error:
+                return None, str(error)
+
+        # The old names remain accepted for the scripted Ollama stand-in.
+        if name in {"odoo_create", "odoo_search_read"}:
+            return name, args
+        if name not in {"create_invoice", "create_sales_order"}:
+            return None, "I couldn't understand that request. Nothing was changed."
+
+        customer = args.get("customer_name")
+        lines = args.get("lines")
+        if not isinstance(customer, str) or not customer.strip():
+            return None, "Which customer should I use?"
+        if not isinstance(lines, list) or not lines:
+            return None, "Which product and quantity should I include?"
+
+        values = {"partner_id": customer.strip()}
+        invoice_date = args.get("invoice_date")
+        if name == "create_invoice" and invoice_date:
+            if not isinstance(invoice_date, str):
+                return None, "Please provide the invoice date as YYYY-MM-DD."
+            try:
+                date.fromisoformat(invoice_date)
+            except ValueError:
+                return None, "Please provide the invoice date as YYYY-MM-DD."
+            if invoice_date not in re.findall(r"\b\d{4}-\d{2}-\d{2}\b", user_message):
+                return None, "I won't add a date that wasn't stated. Please include it as YYYY-MM-DD."
+            values["invoice_date"] = invoice_date
+
+        odoo_lines = []
+        for line in lines:
+            if not isinstance(line, dict):
+                return None, "Please provide each product and quantity in a separate line."
+            product = line.get("product_name")
+            quantity = line.get("quantity")
+            if not isinstance(product, str) or not product.strip():
+                return None, "Which product should I include?"
+            if isinstance(quantity, bool) or not isinstance(quantity, (int, float)) or quantity <= 0:
+                return None, f"How many {product.strip()} should I include?"
+            odoo_lines.append({"product_id": product.strip(), "quantity": quantity})
+
+        if name == "create_invoice":
+            model = "account.move"
+            values["move_type"] = "out_invoice"
+            values["invoice_line_ids"] = [[0, 0, line] for line in odoo_lines]
+        else:
+            model = "sale.order"
+            values["order_line"] = [[0, 0, {
+                "product_id": line["product_id"],
+                "product_uom_qty": line["quantity"],
+            }] for line in odoo_lines]
+        return "odoo_create", {"model": model, "values": values}
+
+    def _summarize_result(self, model: str, result: object) -> str:
+        if isinstance(result, dict) and result.get("error"):
+            return f"I couldn't complete the request: {result['error']}"
+        if isinstance(result, dict) and result.get("status") == "success":
+            label = "draft invoice" if model == "account.move" else "draft sales order"
+            record_id = result.get("created_id")
+            return f"Created a {label} in Odoo" + (f" (record {record_id})." if record_id else ".")
+        if isinstance(result, dict) and result.get("status") == "cancelled":
+            return "No draft was created because you declined the request."
+        if isinstance(result, dict) and result.get("status") == "expired":
+            return "The approval expired. Nothing was created."
+        if isinstance(result, list):
+            return f"Odoo returned {len(result)} matching record(s)."
+        return "Odoo completed the request."
+
     def chat_stream(self, conv_id: str, user_message: str):
         history = self.get_or_create_history(conv_id)
         history.append({'role': 'user', 'content': user_message})
+        model_name = os.getenv("OLLAMA_MODEL", "llama3.1")
+        keep_alive = os.getenv("OLLAMA_KEEP_ALIVE", "").strip()
+        total_started = time.perf_counter()
+        model_ms = 0.0
+        backend_ms = 0.0
 
         yield {"type": "status", "content": "Thinking..."}
 
-        response = ollama_chat(
-            model='llama3.1',
-            messages=history,
-            tools=TOOLS
-        )
+        call_options = {"model": model_name, "messages": history, "tools": TOOLS}
+        if keep_alive:
+            call_options["keep_alive"] = keep_alive
+        model_started = time.perf_counter()
+        try:
+            response = ollama_chat(**call_options)
+        except Exception:
+            text = f"I couldn't reach the AI model '{model_name}'. Check that Ollama is running and the model is available."
+            yield {"type": "token", "content": text}
+            history.append({'role': 'assistant', 'content': text})
+            total_ms = (time.perf_counter() - total_started) * 1000
+            timings = {"model_ms": round(total_ms, 1), "backend_ms": 0, "total_ms": round(total_ms, 1)}
+            self._audit("chat_timing", model=model_name, **timings)
+            yield {"type": "metrics", "content": timings}
+            yield {"type": "done", "content": ""}
+            return
+        model_ms = (time.perf_counter() - model_started) * 1000
 
-        if response.message.tool_calls:
-            for tc in response.message.tool_calls:
+        tool_calls = response.message.tool_calls or []
+        direct_text = None
+        if len(tool_calls) > 1:
+            direct_text = "Please send one request at a time. Nothing was changed."
+            tool_calls = []
+        elif tool_calls:
+            ai_call = tool_calls[0]
+            tool_name, tool_args = self._map_intent(
+                ai_call.function.name, ai_call.function.arguments, user_message
+            )
+            if tool_name is None:
+                direct_text = tool_args
+                tool_calls = []
+            else:
+                tool_calls = [_ToolCall(tool_name, tool_args)]
+
+        if tool_calls:
+            tool_model = tool_calls[0].function.arguments.get("model", "")
+            backend_started = time.perf_counter()
+            tool_result = None
+            for tc in tool_calls:
                 tool_name = tc.function.name
                 tool_args = tc.function.arguments
 
@@ -347,24 +538,25 @@ class ConversationAgent:
                     })
                     yield {"type": "tool_call", "content": json.dumps({"name": tool_name, "result": tool_result}, default=str)}
 
-            yield {"type": "status", "content": "Interpreting results..."}
-
-            stream = ollama_chat(
-                model='llama3.1',
-                messages=history,
-                stream=True
-            )
-
-            full_content = ""
-            for chunk in stream:
-                if chunk.message and chunk.message.content:
-                    full_content += chunk.message.content
-                    yield {"type": "token", "content": chunk.message.content}
-
-            history.append({'role': 'assistant', 'content': full_content})
+            backend_ms = (time.perf_counter() - backend_started) * 1000
+            answer = self._summarize_result(tool_model, tool_result)
+            yield {"type": "token", "content": answer}
+            # This one-call flow doesn't send an assistant tool-call message. Drop the
+            # tool responses so the next Ollama request won't see unmatched tool roles.
+            while history and history[-1].get("role") == "tool":
+                history.pop()
+            history.append({'role': 'assistant', 'content': answer})
         else:
-            text = response.message.content or ""
+            text = direct_text or response.message.content or "Tell me what you would like to do in Odoo."
             yield {"type": "token", "content": text}
             history.append({'role': 'assistant', 'content': text})
 
+        total_ms = (time.perf_counter() - total_started) * 1000
+        timings = {
+            "model_ms": round(model_ms, 1),
+            "backend_ms": round(backend_ms, 1),
+            "total_ms": round(total_ms, 1),
+        }
+        self._audit("chat_timing", model=model_name, **timings)
+        yield {"type": "metrics", "content": timings}
         yield {"type": "done", "content": ""}

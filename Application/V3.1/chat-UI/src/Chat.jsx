@@ -1,36 +1,99 @@
 import { useState, useRef, useEffect } from 'react'
 import './Chat.css'
 
-function tryParseTable(data) {
-  let arr
-  try { arr = JSON.parse(data) } catch { return null }
-  if (!Array.isArray(arr) || arr.length === 0) return null
-  const keys = Object.keys(arr[0]).filter(k => !k.startsWith('_'))
+function parseTable(data) {
+  if (!Array.isArray(data) || data.length === 0 || !data[0] || typeof data[0] !== 'object') return null
+  const keys = Object.keys(data[0]).filter(key => !key.startsWith('_'))
   if (keys.length === 0) return null
-  return { keys, rows: arr.map(r => keys.map(k => r[k])) }
+  return { keys, rows: data.map(row => keys.map(key => row[key])) }
 }
 
-function DataTable({ data }) {
-  const parsed = tryParseTable(data)
-  if (!parsed) return <div className="bubble">Executed</div>
-  return (
-    <div style={{ maxWidth: '92%', overflowX: 'auto' }}>
-      <table className="data-table">
-        <thead>
-          <tr>{parsed.keys.map(k => <th key={k}>{k.replace(/_/g, ' ')}</th>)}</tr>
-        </thead>
-        <tbody>
-          {parsed.rows.map((row, i) => (
-            <tr key={i}>{row.map((cell, j) => {
-              const str = String(cell ?? '')
-              const isPill = ['status', 'payment', 'state'].includes(parsed.keys[j]) && str.length < 20
-              return <td key={j}>{isPill ? <span className={`pill ${str.toLowerCase()}`}>{str}</span> : str}</td>
-            })}</tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
+function displayCell(value) {
+  if (Array.isArray(value) && value.length === 2 && typeof value[0] === 'number') return value[1]
+  if (value && typeof value === 'object') return JSON.stringify(value)
+  return String(value ?? '')
+}
+
+function ToolResult({ result, model }) {
+  const parsed = parseTable(result)
+  if (parsed) {
+    return (
+      <div className="tool-result-table">
+        <p>{parsed.rows.length} matching record(s)</p>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>{parsed.keys.map(key => <th key={key}>{key.replace(/_/g, ' ')}</th>)}</tr>
+            </thead>
+            <tbody>
+              {parsed.rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>{row.map((cell, cellIndex) => {
+                  const value = displayCell(cell)
+                  const isPill = ['status', 'payment_state', 'state'].includes(parsed.keys[cellIndex]) && value.length < 20
+                  return <td key={cellIndex}>{isPill ? <span className={`pill ${value.toLowerCase()}`}>{value}</span> : value}</td>
+                })}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  if (Array.isArray(result)) return <div className="tool-result">No matching records found.</div>
+  if (result?.error) return <div className="tool-result error">I couldn't complete the request: {result.error}</div>
+  if (result?.status === 'success') {
+    const recordType = model === 'account.move'
+      ? 'draft invoice'
+      : model === 'sale.order'
+        ? 'draft sales order'
+        : 'draft record'
+    return (
+      <div className="tool-result success">
+        <strong>Created {recordType}{result.created_id ? ` #${result.created_id}` : ''}.</strong>
+        {result.note && <p>{result.note}</p>}
+      </div>
+    )
+  }
+  if (result?.status === 'cancelled') return <div className="tool-result">No draft was created. You declined the request.</div>
+  if (result?.status === 'expired') return <div className="tool-result">Approval expired. Nothing was created.</div>
+  return <div className="tool-result">Odoo completed the request.</div>
+}
+
+function parseSseBlock(block) {
+  let event = 'message'
+  const data = []
+
+  for (const line of block.split('\n')) {
+    if (!line || line.startsWith(':')) continue
+    const separator = line.indexOf(':')
+    const field = separator === -1 ? line : line.slice(0, separator)
+    let value = separator === -1 ? '' : line.slice(separator + 1)
+    if (value.startsWith(' ')) value = value.slice(1)
+    if (field === 'event') event = value
+    if (field === 'data') data.push(value)
+  }
+
+  if (data.length === 0) return null
+  return { event, data: data.join('\n') }
+}
+
+function approvalLines(info) {
+  const values = info?.values || {}
+  const lines = values.invoice_line_ids || values.order_line || []
+  return lines.map((entry, index) => {
+    const line = Array.isArray(entry) ? entry[2] : entry
+    if (!line || typeof line !== 'object') return null
+    return {
+      key: index,
+      product: line._resolved_product_id_name || line.product_name || `Product ${line.product_id ?? ''}`.trim(),
+      quantity: line.quantity ?? line.product_uom_qty ?? '—',
+    }
+  }).filter(Boolean)
+}
+
+function errorMessage(response, body) {
+  return body?.detail || body?.message || `The request failed (${response.status}).`
 }
 
 export default function Chat() {
@@ -39,6 +102,8 @@ export default function Chat() {
   const [loading, setLoading] = useState(false)
   const [convId, setConvId] = useState(null)
   const [pendingConfirm, setPendingConfirm] = useState(null)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState('')
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
@@ -66,157 +131,203 @@ export default function Chat() {
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setLoading(true)
     setPendingConfirm(null)
+    setConfirmError('')
 
     const cid = convId || crypto.randomUUID().slice(0, 12)
     if (!convId) setConvId(cid)
 
-    const resp = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, conversation_id: cid })
-    })
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, conversation_id: cid }),
+      })
 
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => 'Unknown error')
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error ${resp.status}: ${errText}` }])
-      setLoading(false)
-      return
-    }
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        setMessages(prev => [...prev, { role: 'assistant', content: errorMessage(response, body) }])
+        return
+      }
 
-    const reader = resp.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
+      if (!response.body) throw new Error('The chat stream was empty.')
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+      function handleEvent(block) {
+        const parsed = parseSseBlock(block)
+        if (!parsed) return
+        const { event, data } = parsed
 
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-        if (line.startsWith('event: ')) {
-          const eventType = line.slice(7).trim()
-          const next = lines[i + 1]
-          if (next?.startsWith('data: ')) {
-            const data = next.slice(6)
-            if (eventType === 'token') {
-              addToken(data)
-            } else if (eventType === 'status') {
-              setMessages(prev => [...prev, { role: 'status', content: data }])
-            } else if (eventType === 'tool_call') {
-              try {
-                const tc = JSON.parse(data)
-                setMessages(prev => [...prev, { role: 'tool', content: JSON.stringify(tc.result) }])
-              } catch { }
-            } else if (eventType === 'confirmation_required') {
-              try {
-                const info = JSON.parse(data)
-                setPendingConfirm({ convId: cid, ...info })
-              } catch { }
-            } else if (eventType === 'done') {
-              setLoading(false)
-            }
+        if (event === 'token') {
+          addToken(data)
+        } else if (event === 'status') {
+          setMessages(prev => [...prev.filter(message => message.role !== 'status'), { role: 'status', content: data }])
+        } else if (event === 'tool_call') {
+          try {
+            const tool = JSON.parse(data)
+            setMessages(prev => [...prev, {
+              role: 'tool',
+              model: tool.model,
+              content: tool.result,
+            }])
+          } catch {
+            setMessages(prev => [...prev, { role: 'assistant', content: 'The server returned an unreadable result.' }])
           }
+        } else if (event === 'confirmation_required') {
+          try {
+            setPendingConfirm({ convId: cid, ...JSON.parse(data) })
+            setConfirmError('')
+          } catch {
+            setMessages(prev => [...prev, { role: 'assistant', content: 'The approval details could not be read. Nothing was created.' }])
+          }
+        } else if (event === 'error') {
+          setMessages(prev => [...prev, { role: 'assistant', content: data }])
+        } else if (event === 'done') {
+          setMessages(prev => prev.filter(message => message.role !== 'status'))
         }
       }
+
+      function processBuffer(final = false) {
+        const normalized = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+        const blocks = normalized.split('\n\n')
+        const remainder = blocks.pop() || ''
+        if (final && remainder.trim()) blocks.push(remainder)
+        buffer = final ? '' : remainder
+        for (const block of blocks) handleEvent(block)
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done })
+        processBuffer(done)
+        if (done) break
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: error instanceof Error ? `Chat connection failed: ${error.message}` : 'Chat connection failed.',
+      }])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function handleConfirm(approved) {
-    const info = pendingConfirm
-    setPendingConfirm(null)
-    setMessages(prev => [...prev, {
-      role: 'tool',
-      content: approved ? '{"approved":true}' : '{"approved":false}'
-    }])
-    await fetch(`/api/confirm/${info.convId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approved })
-    })
+    if (!pendingConfirm || confirming) return
+    setConfirming(true)
+    setConfirmError('')
+    try {
+      const response = await fetch(`/api/confirm/${pendingConfirm.convId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved }),
+      })
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        setConfirmError(errorMessage(response, body))
+        return
+      }
+      setPendingConfirm(null)
+    } catch {
+      setConfirmError('The approval could not reach the server. Try again.')
+    } finally {
+      setConfirming(false)
+    }
   }
 
   async function handleNewChat() {
+    let clearError = false
     if (convId) {
-      await fetch(`/api/conversation/${convId}`, { method: 'DELETE' })
+      try {
+        await fetch(`/api/conversation/${convId}`, { method: 'DELETE' })
+      } catch {
+        clearError = true
+      }
     }
-    setMessages([])
+    setMessages(clearError ? [{ role: 'assistant', content: 'The previous chat could not be cleared from the server.' }] : [])
     setConvId(null)
     setInput('')
     setPendingConfirm(null)
+    setConfirmError('')
   }
+
+  const reviewLines = approvalLines(pendingConfirm)
+  const isInvoice = pendingConfirm?.model === 'account.move'
+  const customerName = pendingConfirm?.values?._resolved_partner_id_name
 
   return (
     <div className="chat-container">
       <header className="chat-header">
         <div className="header-left">
-          <div className="ai-icon">◆</div>
+          <div className="ai-icon" aria-hidden="true">◆</div>
           <div className="header-info">
-            <span className="header-model">Your Model</span>
-            <span className="header-status">Connected to YourERP (Odoo)</span>
+            <span className="header-model">Odoo Assistant</span>
+            <span className="header-status">Local AI · Odoo</span>
           </div>
         </div>
         <button className="new-chat-btn" onClick={handleNewChat}>+ New Chat</button>
       </header>
 
-      <div className="messages">
+      <div className="messages" aria-live="polite">
         {messages.length === 0 && (
           <div className="welcome">
-            <p>Ask me anything about your Odoo ERP data.</p>
-            <p className="examples">
-              Try: "Show me all customers" or "Create a sales order for Pepsi with 10 units of Product A"
-            </p>
+            <p>Ask the assistant to look up Odoo records or prepare a draft.</p>
+            <p className="examples">Try: “Create an invoice for Pepsi with 3 chairs.”</p>
           </div>
         )}
 
-        {messages.map((msg, i) => {
-          if (msg.role === 'status') {
-            return <div key={i} className="status-msg">{msg.content}</div>
-          }
-          if (msg.role === 'tool') {
+        {messages.map((message, index) => {
+          if (message.role === 'status') return <div key={index} className="status-msg">{message.content}</div>
+          if (message.role === 'tool') {
             return (
-              <div key={i} className="message assistant">
-                <div className="msg-label">YourAIModel · YourERP</div>
-                <DataTable data={msg.content} />
+              <div key={index} className="message assistant">
+                <div className="msg-label">Odoo result</div>
+                <ToolResult result={message.content} model={message.model} />
               </div>
             )
           }
           return (
-            <div key={i} className={`message ${msg.role}`}>
-              {msg.role === 'assistant' && <div className="msg-label">YourAIModel · YourERP</div>}
-              <div className="bubble">{msg.content}</div>
+            <div key={index} className={`message ${message.role}`}>
+              {message.role === 'assistant' && <div className="msg-label">Odoo Assistant</div>}
+              <div className="bubble">{message.content}</div>
             </div>
           )
         })}
 
         {loading && !pendingConfirm && (
           <div className="message assistant">
-            <div className="bubble typing">
-              <span className="dot-pulse"></span>
-            </div>
+            <div className="bubble typing"><span className="dot-pulse" /></div>
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
       {pendingConfirm && (
         <div className="confirm-overlay">
-          <div className="confirm-dialog">
-            <div className="confirm-icon">✓</div>
+          <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+            <div className="confirm-icon" aria-hidden="true">?</div>
             <div className="confirm-body">
-              <h3>Confirm Create</h3>
-              <p className="confirm-detail">{pendingConfirm.summary}</p>
+              <h3 id="confirm-title">Review {isInvoice ? 'draft invoice' : 'draft sales order'}</h3>
+              <p className="approval-customer">Customer: {customerName || 'Please review the customer in Odoo'}</p>
+              {reviewLines.length > 0 ? (
+                <ul className="approval-lines">
+                  {reviewLines.map(line => <li key={line.key}>{line.product} <span>× {line.quantity}</span></li>)}
+                </ul>
+              ) : <p className="confirm-detail">{pendingConfirm.summary}</p>}
+              {pendingConfirm.values?.invoice_date && <p className="approval-date">Invoice date: {pendingConfirm.values.invoice_date}</p>}
+              <p className="approval-pricing">Odoo will apply the product price list and tax settings.</p>
+              {confirmError && <p className="confirm-error" role="alert">{confirmError}</p>}
             </div>
             <div className="confirm-actions">
-              <button className="confirm-btn reject" onClick={() => handleConfirm(false)}>✕</button>
-              <button className="confirm-btn approve" onClick={() => handleConfirm(true)}>✓</button>
+              <button className="confirm-btn reject" onClick={() => handleConfirm(false)} disabled={confirming}>
+                {confirming ? 'Please wait…' : 'Reject'}
+              </button>
+              <button className="confirm-btn approve" onClick={() => handleConfirm(true)} disabled={confirming}>
+                {confirming ? 'Please wait…' : 'Approve draft'}
+              </button>
             </div>
-          </div>
+          </section>
         </div>
       )}
 
@@ -224,9 +335,10 @@ export default function Chat() {
         <input
           type="text"
           value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Message the AI agent..."
+          onChange={event => setInput(event.target.value)}
+          placeholder="Message the Odoo assistant…"
           disabled={loading || pendingConfirm}
+          aria-label="Message the Odoo assistant"
         />
         <button type="submit" disabled={loading || !input.trim() || pendingConfirm}>Send</button>
       </form>
