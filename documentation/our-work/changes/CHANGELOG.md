@@ -23,7 +23,11 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 
 ---
 
-## PR #3 – Documentation restructure, test results, changelog (open)
+## PR #4 – Claude Code project settings (open)
+- `.claude/settings.json`: adds the `ponytail` plugin marketplace (GitHub `DietrichGebert/ponytail`) and enables the `ponytail` plugin for everyone who opens this repo in Claude Code.
+
+## PR #3 – Documentation restructure, test results, changelog (merged 12 Nov 2026)
+[Floydgodlieb/AI-Integrated-ERP#3](https://github.com/Floydgodlieb/AI-Integrated-ERP/pull/3)
 - `documentation/` split into `previous-group/` (their documents, content untouched, clean file names) and `our-work/` (handover, planning, changes, tests, experiments, design, decisions).
 - New: this changelog, [TEST-RESULTS.md](../tests/TEST-RESULTS.md) with raw reports in `tests/runs/`, [DECISIONS.md](../decisions/DECISIONS.md) template, `documentation/README.md` index.
 - Added from the handover: handover report, session overview, team plan, roles & tasks, project overview, Marija's handoff (marked as dated snapshots).
