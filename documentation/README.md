@@ -5,6 +5,7 @@ Two parts: **`previous-group/`** is what the previous group left us (archive, co
 ## Start here
 | You want to … | Read |
 |---|---|
+| See what we build, how, and what comes next | [PRD](our-work/product/PRD.html) · [Blueprint](our-work/product/BLUEPRINT.html) · [Build plan](our-work/product/BUILD-PLAN.html) (download and open in a browser; GitHub shows HTML as code) |
 | Set up the project on your PC | [`Setup/Quickstart.md`](../Setup/Quickstart.md) (in the repo root) |
 | Understand what the previous group built | [HANDOVER-REPORT.md](our-work/handover/HANDOVER-REPORT.md) |
 | See everything we changed | [CHANGELOG.md](our-work/changes/CHANGELOG.md) |
@@ -16,6 +17,7 @@ Two parts: **`previous-group/`** is what the previous group left us (archive, co
 ## our-work/
 | Folder | Contents |
 |---|---|
+| [`product/`](our-work/product/) | [PRD.html](our-work/product/PRD.html) – what v1 must do and its status · [BLUEPRINT.html](our-work/product/BLUEPRINT.html) – architecture, safety boundary, measurements · [BUILD-PLAN.html](our-work/product/BUILD-PLAN.html) – phases, test gates, checkboxes |
 | [`handover/`](our-work/handover/) | [HANDOVER-REPORT.md](our-work/handover/HANDOVER-REPORT.md) – full investigation of the previous group's work (snapshot 9–10 Nov 2026) · [SESSION-OVERVIEW.md](our-work/handover/SESSION-OVERVIEW.md) – first setup session (snapshot 10 Nov) |
 | [`planning/`](our-work/planning/) | [`weekly-reports/`](our-work/planning/weekly-reports/) – weekly progress reports · [TEAM-PLAN.md](our-work/planning/TEAM-PLAN.md) – workstreams, timeline, backlog · [roles-and-tasks.pdf](our-work/planning/roles-and-tasks.pdf) – roles and tasks per person · [project-overview.pdf](our-work/planning/project-overview.pdf) – 2-page visual summary · [HANDOFF-MARIJA.md](our-work/planning/HANDOFF-MARIJA.md) |
 | [`changes/`](our-work/changes/) | [CHANGELOG.md](our-work/changes/CHANGELOG.md) – all changes per pull request, plus V3 vs V3.1 at a glance · [BACKEND-CHANGES.md](our-work/changes/BACKEND-CHANGES.md) – technical detail of the backend work |

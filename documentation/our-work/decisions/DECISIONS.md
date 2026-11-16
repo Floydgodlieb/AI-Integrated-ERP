@@ -6,6 +6,7 @@ When a data-contract decision is made, also tick it in [DATA-CONTRACT.md](../des
 ## Decided
 | Date | Decision | Why | Alternatives considered | Who |
 |---|---|---|---|---|
+| 2026-11-16 | Our PRD, blueprint and build plan live in `documentation/our-work/product/` (HTML); the PRD replaces the previous group's `prd.md` as the reference (theirs stays in the archive) | Their PRD promised features that were never built (forecasting, confidence scores, rollback); ours marks what v1 does and what is left out | Keep editing their PRD | Floyd |
 | 2026-11-16 | Start testing with entrepreneurs now (a few demos, in person and via LinkedIn) instead of waiting until the product is finished | Supervisor: validate the ~80% that is built before over-investing in the last 20% | Finish first, test at the end | Team + supervisor |
 | 2026-11-16 | Build in phases from a build plan; every phase ends with a test gate and is pushed only when the tests pass | No broken code on GitHub; teammates always pull a working version | Push whenever | Team + supervisor |
 | 2026-11-16 | Reports for people are interactive HTML pages (D3, Three.js, Motion); the Markdown files stay the record | Supervisor: documentation must be readable for humans, not just AI | Markdown/PDF only | Team + supervisor |
