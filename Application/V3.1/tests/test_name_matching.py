@@ -8,6 +8,9 @@ class StubOdoo:
     """Answers name searches like Odoo would, from a fixed list."""
     names = {"res.partner": ["Pepsi", "Pepsi Cola Bottling", "Jansen Bouw", "Jansen & Zonen"]}
 
+    def internal_partner_ids(self):
+        return []
+
     def search_read(self, model, domain, fields):
         _, op, text = domain[0]
         hit = (lambda n: n.lower() == text.lower()) if op == "=ilike" else (lambda n: text.lower() in n.lower())
@@ -43,3 +46,17 @@ def test_seed_data_resolves(odoo, field, text, expected):
 def test_seed_data_ambiguous_names_ask(odoo, text):
     with pytest.raises(ValueError, match="More than one customer"):
         resolve(odoo, partner_id=text)
+
+
+def test_own_company_and_internal_users_are_never_customers(odoo):
+    for name in ("My Company", "Administrator", "AI Agent"):
+        with pytest.raises(ValueError, match="Could not find"):
+            resolve(odoo, partner_id=name)
+
+
+def test_review_uses_odoo_price_and_total(odoo):
+    from backend import resolver
+    values = resolve(odoo, partner_id="Pepsi", invoice_line_ids=[[0, 0, {"product_id": "Chair", "quantity": 3, "price_unit": 10.0}]])
+    review = resolver.prepare_review(odoo, "account.move", values)
+    assert values["invoice_line_ids"][0][2]["_resolved_product_id_price"] == 50.0      # Odoo price, not the AI's 10.00
+    assert review["total_untaxed"] == 150.0

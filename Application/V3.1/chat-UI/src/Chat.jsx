@@ -88,6 +88,7 @@ function approvalLines(info) {
       key: index,
       product: line._resolved_product_id_name || line.product_name || `Product ${line.product_id ?? ''}`.trim(),
       quantity: line.quantity ?? line.product_uom_qty ?? '—',
+      price: line._resolved_product_id_price,   // Odoo list price, sent by the backend
     }
   }).filter(Boolean)
 }
@@ -312,11 +313,20 @@ export default function Chat() {
               <p className="approval-customer">Customer: {customerName || 'Please review the customer in Odoo'}</p>
               {reviewLines.length > 0 ? (
                 <ul className="approval-lines">
-                  {reviewLines.map(line => <li key={line.key}>{line.product} <span>× {line.quantity}</span></li>)}
+                  {reviewLines.map(line => (
+                    <li key={line.key}>{line.product} <span>× {line.quantity}
+                      {typeof line.price === 'number' && typeof line.quantity === 'number' &&
+                        ` @ ${line.price.toFixed(2)} = ${(line.price * line.quantity).toFixed(2)}`}</span></li>
+                  ))}
                 </ul>
               ) : <p className="confirm-detail">{pendingConfirm.summary}</p>}
               {pendingConfirm.values?.invoice_date && <p className="approval-date">Invoice date: {pendingConfirm.values.invoice_date}</p>}
-              <p className="approval-pricing">Odoo will apply the product price list and tax settings.</p>
+              {pendingConfirm.review ? (
+                <p className="approval-pricing">
+                  <strong>Total excl. VAT: {pendingConfirm.review.total_untaxed.toFixed(2)}</strong> (list prices; Odoo applies the price list and VAT)
+                </p>
+              ) : <p className="approval-pricing">Odoo will apply the product price list and tax settings.</p>}
+              {pendingConfirm.review?.warnings?.map(warning => <p key={warning} className="confirm-error" role="alert">{warning}</p>)}
               {confirmError && <p className="confirm-error" role="alert">{confirmError}</p>}
             </div>
             <div className="confirm-actions">
