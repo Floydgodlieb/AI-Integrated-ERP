@@ -27,6 +27,7 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 - From Floyd's audit log (experiment #13): the same sentence ("sell 4 premium chairs to Luther") once became an order and once a customer lookup.
 - Main AI call now runs at **temperature 0** (same input → same action).
 - Prompt rule: selling/ordering/quoting → `create_sales_order`, invoicing/billing → `create_invoice`, also for names the AI hasn't seen; lookups only when the user asks to show, find or list.
+- Added `CLAUDE.md` in the repo root: commands, request flow and rules for Claude Code sessions in this repo.
 
 ## AI product suggestions, clearer messages ([#7](https://github.com/Floydgodlieb/AI-Integrated-ERP/pull/7), merged 16 Nov 2026)
 From Floyd's second real-AI test (16 Nov):
