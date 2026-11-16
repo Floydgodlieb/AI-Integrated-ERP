@@ -97,7 +97,7 @@ button, .chip { font: inherit; cursor: pointer; }
 .chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 5px 12px; border-radius: 999px; font-size: .88rem; }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .chip:hover { border-color: var(--accent); }
-.btn { border: 0; background: var(--accent); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+.btn { border: 0; background: var(--accent); color: var(--panel); padding: 8px 16px; border-radius: 8px; font-weight: 600; }
 .btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
 .btn:disabled { opacity: .45; cursor: default; }
 .note { font-size: .88rem; color: var(--muted); }
@@ -131,7 +131,7 @@ footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(
 .steps li button:focus-visible { outline: 3px solid var(--accent); }
 .steps li button .n { font-family: var(--font-mono); font-size: .8rem; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); }
 .steps li[aria-current="step"] button { background: var(--accent-soft); color: var(--ink); }
-.steps li[aria-current="step"] .n { background: var(--accent); border-color: var(--accent); color: #fff; }
+.steps li[aria-current="step"] .n { background: var(--accent); border-color: var(--accent); color: var(--panel); }
 .step-now { min-height: 4.5em; padding: 12px 14px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); font-size: .95rem; }
 .step-now .where { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); display: block; margin-bottom: 2px; }
 .controls { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -441,10 +441,10 @@ svg.diagram .edge.on { stroke: var(--accent); stroke-width: 2.4; }
         </g>
         <rect class="box ok" x="620" y="34" width="340" height="48" rx="8"/>
         <text x="636" y="54" font-size="12.5" font-weight="600" fill="currentColor">Created a draft invoice in Odoo (record …).</text>
-        <text x="636" y="72" class="sub">audit: approval_approved, created</text>
+        <text x="636" y="72" class="sub">audit: approval_answered, created</text>
         <rect class="box" x="620" y="104" width="340" height="48" rx="8"/>
         <text x="636" y="124" font-size="12.5" font-weight="600" fill="currentColor">No draft was created because you declined the request.</text>
-        <text x="636" y="142" class="sub">audit: approval_rejected</text>
+        <text x="636" y="142" class="sub">audit: approval_answered</text>
         <rect class="box" x="620" y="178" width="340" height="48" rx="8"/>
         <text x="636" y="198" font-size="12.5" font-weight="600" fill="currentColor">The approval expired. Nothing was created.</text>
         <text x="636" y="216" class="sub">default 300 s · audit: approval_expired</text>
@@ -501,7 +501,7 @@ svg.diagram .edge.on { stroke: var(--accent); stroke-width: 2.4; }
 
 <section id="code" aria-labelledby="h-code">
   <div class="section-head"><span class="num">08 · Code map</span><h2 id="h-code">Files, jobs and owners</h2>
-    <p>Who changes what, so Floyd's and Marija's work don't collide (<a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/decisions/DECISIONS.md">DECISIONS.md</a>).</p></div>
+    <p>Who changes what, so Floyd's and Marija's work don't collide. The split of <code>agent.py</code> is still a <strong>proposal</strong> to agree on (open in <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/decisions/DECISIONS.md">DECISIONS.md</a>).</p></div>
   <div class="table-wrap"><table>
     <thead><tr><th>File (in <code>Application/V3.1</code>)</th><th>Job</th><th>Owner</th></tr></thead>
     <tbody>
@@ -544,7 +544,7 @@ svg.diagram .edge.on { stroke: var(--accent); stroke-width: 2.4; }
       <thead><tr><th>Audit event</th><th>When</th></tr></thead>
       <tbody>
         <tr><td><code>ai_tool_call</code></td><td>raw AI output, every message</td></tr>
-        <tr><td><code>approval_*</code></td><td>approved, rejected, expired</td></tr>
+        <tr><td><code>approval_*</code></td><td>requested, answered, expired</td></tr>
         <tr><td><code>created</code></td><td>draft made in Odoo</td></tr>
         <tr><td><code>create_blocked</code> / <code>read_blocked</code></td><td>allow-list said no</td></tr>
         <tr><td><code>product_suggestion</code></td><td>AI guess for an unknown product</td></tr>
@@ -586,7 +586,7 @@ const STEPS = [
   { at: "agent", where: "Agent · _map_intent", text: "Checks the arguments (tool, quantity > 0, date) and turns them into a draft account.move request." },
   { at: "resolver", where: "Resolver · resolver.py", text: "“Pepsi” matches exactly (not Pepsi Cola Bottling). “Chair” matches exactly (not Ergonomic Chair)." },
   { at: "odoo", via: ["client"], where: "Odoo client → Odoo", text: "Reads through the allow-list: the ids, the list price 50.00, and recent drafts for the duplicate check." },
-  { at: "ui", via: ["client", "resolver", "agent", "api"], where: "Approval card", text: "Chair × 3 @ 50.00 = 150.00 · Total excl. VAT 150.00. You click Approve draft.", audit: "approval_approved" },
+  { at: "ui", via: ["client", "resolver", "agent", "api"], where: "Approval card", text: "Chair × 3 @ 50.00 = 150.00 · Total excl. VAT 150.00. You click Approve draft.", audit: "approval_answered" },
   { at: "odoo", via: ["api", "agent", "client"], where: "Odoo client → Odoo", text: "Creates a draft account.move (move_type out_invoice). The price comes from Odoo, not from the AI.", audit: "created" },
   { at: "ui", via: ["client", "agent", "api"], where: "Chat UI", text: "“Created a draft invoice in Odoo (record …).” In Odoo: 150.00 excl. VAT, 181.50 incl. 21% VAT." },
 ];
@@ -654,7 +654,7 @@ safely("3D stack", () => {
     g.fillText(sub, h * 0.28, h * 0.72);
     const t = new THREE.CanvasTexture(c); t.anisotropy = 4; t.colorSpace = THREE.SRGBColorSpace; return t;
   }
-  const world = new THREE.Group(); scene.add(world);
+  const world = new THREE.Group(); world.position.x = -0.6; scene.add(world);
   const nodes = {}, mats = {};
   const panelC = col("--panel"), lineC = col("--line"), accentC = col("--accent"), draftC = col("--draft");
   function slab(key, w, h, d, pos, title, sub) {

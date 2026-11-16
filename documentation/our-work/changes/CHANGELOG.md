@@ -28,7 +28,6 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 - Main AI call now runs at **temperature 0** (same input → same action).
 - Prompt rule: selling/ordering/quoting → `create_sales_order`, invoicing/billing → `create_invoice`, also for names the AI hasn't seen; lookups only when the user asks to show, find or list.
 - **PRD, blueprint and build plan** as interactive HTML pages in `documentation/our-work/product/` (D3 charts, Three.js request flow, Motion animation; scripted chat demo with the app's real messages). The PRD is rewritten from the previous group's and marks each requirement done / partly / open / not in v1.
-- Supervisor meeting notes removed from the repo again (kept out of GitHub).
 - Added `CLAUDE.md` in the repo root: commands, request flow and rules for Claude Code sessions in this repo, including the build workflow (phases + test gate) and HTML reports agreed in the 16 Nov supervisor meeting.
 
 ## AI product suggestions, clearer messages ([#7](https://github.com/Floydgodlieb/AI-Integrated-ERP/pull/7), merged 16 Nov 2026)

@@ -97,7 +97,7 @@ button, .chip { font: inherit; cursor: pointer; }
 .chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 5px 12px; border-radius: 999px; font-size: .88rem; }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .chip:hover { border-color: var(--accent); }
-.btn { border: 0; background: var(--accent); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+.btn { border: 0; background: var(--accent); color: var(--panel); padding: 8px 16px; border-radius: 8px; font-weight: 600; }
 .btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
 .btn:disabled { opacity: .45; cursor: default; }
 .note { font-size: .88rem; color: var(--muted); }
@@ -139,7 +139,7 @@ footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(
 .chat-top .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 .log { padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 560px; }
 .bubble { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: .94rem; line-height: 1.5; white-space: pre-wrap; }
-.bubble.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+.bubble.user { align-self: flex-end; background: var(--accent); color: var(--panel); border-bottom-right-radius: 4px; }
 .bubble.bot { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 .bubble.typing { color: var(--muted); font-style: italic; }
 .card { align-self: flex-start; width: min(460px, 92%); border: 2px solid var(--draft); background: var(--panel); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
