@@ -270,9 +270,18 @@ class ConversationAgent:
                 resolved[field] = resolved_lines
             elif field in FIELD_MODEL_MAP and isinstance(raw_value, str):
                 search_model = FIELD_MODEL_MAP[field]
-                results = self.odoo.search_read(search_model, [["name", "ilike", raw_value]], ["name", "id"])
+                # Exact name (any case) wins; else one partial match; several matches -> ask, never guess.
+                # shortcut: % and _ in the name act as wildcards in =ilike, escape them if names ever contain them
+                results = self.odoo.search_read(search_model, [["name", "=ilike", raw_value]], ["name", "id"])
+                if not results:
+                    results = self.odoo.search_read(search_model, [["name", "ilike", raw_value]], ["name", "id"])
                 if not results:
                     raise ValueError(f"Could not find {search_model} matching '{raw_value}'")
+                if len(results) > 1:
+                    label = MODEL_LABELS.get(search_model, search_model).lower()
+                    names = ", ".join(r["name"] for r in results[:5]) + (", ..." if len(results) > 5 else "")
+                    raise ValueError(f"More than one {label} matches '{raw_value}': {names}. "
+                                     f"Please repeat the request with the full name.")
                 resolved[field] = results[0]["id"]
                 resolved[f"_resolved_{field}_name"] = results[0]["name"]
             else:

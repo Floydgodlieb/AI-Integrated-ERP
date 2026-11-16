@@ -102,6 +102,13 @@ def test_unknown_customer_is_rejected(api):
     assert "Could not find" in tool_result(chat(base, "order for unknown customer", "create-3"))["error"]
 
 
+def test_ambiguous_customer_is_asked_not_guessed(api):
+    base, _ = api
+    events = chat(base, "create an invoice for jansen", "ambiguous-1")
+    assert "More than one customer matches 'Jansen'" in tool_result(events)["error"]
+    assert not any(e == "confirmation_required" for e, _ in events)   # nothing to approve, nothing created
+
+
 def test_twenty_parallel_chats(api):
     base, _ = api
     outcomes = []

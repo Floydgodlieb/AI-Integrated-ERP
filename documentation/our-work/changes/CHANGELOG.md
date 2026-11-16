@@ -23,7 +23,14 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 
 ---
 
-## PR #3 – Documentation restructure, test results, changelog (open)
+## Name matching: ask instead of guessing (this PR)
+- `agent.py` `resolve_entities`: an exact name (any case) wins; otherwise a single partial match is used (the approval card shows the full Odoo name); several matches → the user is asked, nothing is prepared. Before: the first partial match was silently used.
+- 9 new tests (`test_name_matching.py`, one end-to-end test via Marija's `create_invoice` action). 4 of them fail on the old code. 50 tests pass.
+
+## Marija – V3.1 chat and structured AI actions (pushed directly to `main`, 14 Nov 2026, `9c8aae2`)
+- One structured AI action per message (names and quantities only, no ids or prices); one AI call per message; result and error texts written by the app; line breaks fixed; approval card with customer and product lines; model settings, timing records, extraction replay script. Details: `MARIA-WEEKLY-TASK.md`.
+
+## PR #3 – Documentation restructure, test results, changelog (merged 12 Nov 2026)
 - `documentation/` split into `previous-group/` (their documents, content untouched, clean file names) and `our-work/` (handover, planning, changes, tests, experiments, design, decisions).
 - New: this changelog, [TEST-RESULTS.md](../tests/TEST-RESULTS.md) with raw reports in `tests/runs/`, [DECISIONS.md](../decisions/DECISIONS.md) template, `documentation/README.md` index.
 - Added from the handover: handover report, session overview, team plan, roles & tasks, project overview, Marija's handoff (marked as dated snapshots).
