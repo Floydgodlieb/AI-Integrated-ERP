@@ -26,6 +26,7 @@ import threading
 import time
 import urllib.request
 import xmlrpc.client
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 log = logging.getLogger(__name__)
@@ -310,6 +311,26 @@ class OdooClient:
         if order and isinstance(order, str):
             kwargs["order"] = order
         return self._execute(model, "search_read", [clean_domain], kwargs, retry=True)
+
+    # -- backend-only lookups (not reachable by the AI) ------------------------
+    def internal_partner_ids(self) -> list:
+        """Contacts of our own company and internal users (My Company, Administrator, AI Agent, OdooBot)."""
+        # shortcut: cached until the backend restarts; restart after adding internal users or companies
+        if getattr(self, "_internal_partner_ids", None) is None:
+            users = self._execute("res.users", "search_read", [[["share", "=", False]]],
+                                  {"fields": ["partner_id"], "context": {"active_test": False}}, retry=True)
+            companies = self._execute("res.company", "search_read", [[]], {"fields": ["partner_id"]}, retry=True)
+            self._internal_partner_ids = sorted({r["partner_id"][0] for r in users + companies if r["partner_id"]})
+        return self._internal_partner_ids
+
+    def recent_drafts(self, model: str, partner_id: int, hours: int = 24) -> list:
+        """Unconfirmed quotations / draft customer invoices for this customer from the last `hours`."""
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")  # Odoo stores UTC
+        domain = [["partner_id", "=", partner_id], ["create_date", ">=", cutoff]]
+        domain += ([["state", "in", ["draft", "sent"]]] if model == "sale.order"
+                   else [["state", "=", "draft"], ["move_type", "=", "out_invoice"]])
+        return self._execute(model, "search_read", [domain],
+                             {"fields": ["name", "amount_untaxed", "create_date"], "limit": 20}, retry=True)
 
     # -- creating -----------------------------------------------------------
     def _guard_create(self, model: str, values: dict):

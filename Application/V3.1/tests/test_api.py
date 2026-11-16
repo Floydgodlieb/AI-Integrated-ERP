@@ -133,6 +133,31 @@ def test_other_reply_is_a_new_request(api):
     assert "pick-new" not in backend_main.agent.pending_choices
 
 
+def test_card_shows_odoo_prices_and_duplicate_warning(api, monkeypatch):
+    base, _ = api
+    from backend import agent as agent_module
+    monkeypatch.setattr(agent_module, "APPROVAL_TIMEOUT_SECONDS", 1)
+    chat(base, "create an invoice for pepsi", "dup-1", approve=True)              # first draft: 3 Chair
+    events = chat(base, "create an invoice for pepsi", "dup-2", approve=False)    # same again
+    card = json.loads(next(d for e, d in events if e == "confirmation_required"))
+    assert card["review"]["total_untaxed"] == 150.0                              # AI sent 10.00; Odoo says 50.00
+    assert card["values"]["invoice_line_ids"][0][2]["_resolved_product_id_price"] == 50.0
+    assert any("Possible duplicate" in w for w in card["review"]["warnings"])   # warns, doesn't block
+    assert tool_result(events)["status"] == "cancelled"
+
+
+@pytest.mark.parametrize("variant", ["text", "dict", "qty-text", "plural"])
+def test_order_lines_in_the_shapes_small_models_send(api, monkeypatch, variant):
+    # Floyd's real llama3.1 kept answering "Which product and quantity should I include?"
+    base, _ = api
+    from backend import agent as agent_module
+    monkeypatch.setattr(agent_module, "APPROVAL_TIMEOUT_SECONDS", 1)
+    events = chat(base, f"sell variant {variant}", f"shape-{variant}", approve=False)
+    card = json.loads(next(d for e, d in events if e == "confirmation_required"))
+    line = card["values"]["order_line"][0][2]
+    assert (line["_resolved_product_id_name"], line["product_uom_qty"]) == ("Chair", 3)
+
+
 def test_twenty_parallel_chats(api):
     base, _ = api
     outcomes = []

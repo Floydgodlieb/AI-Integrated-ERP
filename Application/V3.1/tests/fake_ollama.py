@@ -28,6 +28,11 @@ def _script(messages, has_tools):
     if "order for pepsi" in text:
         return {"tool": ("odoo_create", {"model": "sale.order", "values": {
             "partner_id": "Pepsi", "product_id": "Chair", "product_uom_qty": 2}})}
+    if text.startswith("sell variant "):   # the shapes small models really send for "sell 3 chairs to Pepsi"
+        line = {"product_name": "chairs", "quantity": 3}
+        lines = {"text": json.dumps([line]), "dict": line, "qty-text": [{"product_name": "Chair", "quantity": "3"}],
+                 "plural": [line]}[text.split()[2]]
+        return {"tool": ("create_sales_order", {"customer_name": "Pepsi", "lines": lines})}
     if "invoice for jansen" in text:       # Marija's structured action with an ambiguous customer
         return {"tool": ("create_invoice", {"customer_name": "Jansen", "invoice_date": None,
                                             "lines": [{"product_name": "Desk", "quantity": 1}]})}

@@ -1,0 +1,144 @@
+Date   : 2026-11-16 12:10
+Who    : lab-linux
+OS     : Linux-6.18.44-fc-v470-x86_64-with-glibc2.39
+Python : 3.13.18
+Odoo   : 20.0-20261102
+Git    : claude/gifted-mccarthy-r2p1hv @ f6bb128
+Command: pytest Application/V3.1/tests -v -rA --durations=5
+======================================================================
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /tmp/claude-0/-home-user-AI-Integrated-ERP/16b979ef-3a11-51dd-a9e4-c946c7ff5110/scratchpad/venv/bin/python
+rootdir: /home/user/AI-Integrated-ERP
+plugins: anyio-4.16.0
+collecting ... collected 60 items
+
+Application/V3.1/tests/test_api.py::test_health_reports_odoo_version PASSED [  1%]
+Application/V3.1/tests/test_api.py::test_read_customers PASSED           [  3%]
+Application/V3.1/tests/test_api.py::test_fields_sent_as_text_no_longer_break_the_read PASSED [  5%]
+Application/V3.1/tests/test_api.py::test_reading_system_users_is_refused PASSED [  6%]
+Application/V3.1/tests/test_api.py::test_approved_invoice_is_draft_with_odoo_price PASSED [  8%]
+Application/V3.1/tests/test_api.py::test_declined_order_creates_nothing PASSED [ 10%]
+Application/V3.1/tests/test_api.py::test_unknown_customer_is_rejected PASSED [ 11%]
+Application/V3.1/tests/test_api.py::test_ambiguous_customer_is_asked_not_guessed PASSED [ 13%]
+Application/V3.1/tests/test_api.py::test_pick_from_the_list_without_retyping[2-Jansen Bouw] PASSED [ 15%]
+Application/V3.1/tests/test_api.py::test_pick_from_the_list_without_retyping[jansen & zonen-Jansen & Zonen] PASSED [ 16%]
+Application/V3.1/tests/test_api.py::test_other_reply_is_a_new_request PASSED [ 18%]
+Application/V3.1/tests/test_api.py::test_card_shows_odoo_prices_and_duplicate_warning PASSED [ 20%]
+Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[text] PASSED [ 21%]
+Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[dict] PASSED [ 23%]
+Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[qty-text] PASSED [ 25%]
+Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[plural] PASSED [ 26%]
+Application/V3.1/tests/test_api.py::test_twenty_parallel_chats PASSED    [ 28%]
+Application/V3.1/tests/test_api.py::test_abandoned_approvals_do_not_freeze_the_server PASSED [ 30%]
+Application/V3.1/tests/test_api.py::test_unanswered_approval_expires PASSED [ 31%]
+Application/V3.1/tests/test_name_matching.py::test_offline_rules PASSED  [ 33%]
+Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[partner_id-Pepsi-Pepsi] PASSED [ 35%]
+Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[partner_id-pepsi-Pepsi] PASSED [ 36%]
+Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[product_id-Chair-Chair] PASSED [ 38%]
+Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[product_id-Floor-Chair Floor Protection] PASSED [ 40%]
+Application/V3.1/tests/test_name_matching.py::test_seed_data_ambiguous_names_ask[Jansen] PASSED [ 41%]
+Application/V3.1/tests/test_name_matching.py::test_seed_data_ambiguous_names_ask[Acme] PASSED [ 43%]
+Application/V3.1/tests/test_name_matching.py::test_seed_data_ambiguous_names_ask[pep] PASSED [ 45%]
+Application/V3.1/tests/test_name_matching.py::test_own_company_and_internal_users_are_never_customers PASSED [ 46%]
+Application/V3.1/tests/test_name_matching.py::test_review_uses_odoo_price_and_total PASSED [ 48%]
+Application/V3.1/tests/test_odoo_client.py::test_forty_parallel_reads_all_succeed PASSED [ 50%]
+Application/V3.1/tests/test_odoo_client.py::test_seed_data_is_present PASSED [ 51%]
+Application/V3.1/tests/test_odoo_client.py::test_fields_sent_as_text_still_work PASSED [ 53%]
+Application/V3.1/tests/test_odoo_client.py::test_unknown_or_forbidden_fields_are_left_out PASSED [ 55%]
+Application/V3.1/tests/test_odoo_client.py::test_filtering_on_a_forbidden_field_is_blocked PASSED [ 56%]
+Application/V3.1/tests/test_odoo_client.py::test_reads_are_limited PASSED [ 58%]
+Application/V3.1/tests/test_odoo_client.py::test_odoo_errors_are_short PASSED [ 60%]
+Application/V3.1/tests/test_odoo_client.py::test_invoice_uses_odoo_price_not_ai_price PASSED [ 61%]
+Application/V3.1/tests/test_odoo_client.py::test_sales_order_is_created_as_draft PASSED [ 63%]
+Application/V3.1/tests/test_safety_rules.py::test_odoo_traceback_becomes_one_short_line PASSED [ 65%]
+Application/V3.1/tests/test_safety_rules.py::test_access_error_is_reported_as_not_allowed PASSED [ 66%]
+Application/V3.1/tests/test_safety_rules.py::test_errors_are_value_errors_so_the_agent_handles_them PASSED [ 68%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[['name', 'email', 'phone']-expected0] PASSED [ 70%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[["name", "id"]-expected1] PASSED [ 71%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[name, email-expected2] PASSED [ 73%]
+Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[raw3-expected3] PASSED [ 75%]
+Application/V3.1/tests/test_safety_rules.py::test_ai_price_is_ignored_and_odoo_price_used PASSED [ 76%]
+Application/V3.1/tests/test_safety_rules.py::test_ai_price_kept_only_when_explicitly_allowed PASSED [ 78%]
+Application/V3.1/tests/test_safety_rules.py::test_only_customer_invoices_can_be_created PASSED [ 80%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[0] PASSED [ 81%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[-2] PASSED [ 83%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[lots] PASSED [ 85%]
+Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[None] PASSED [ 86%]
+Application/V3.1/tests/test_safety_rules.py::test_customer_must_be_a_real_odoo_id PASSED [ 88%]
+Application/V3.1/tests/test_safety_rules.py::test_at_least_one_line_is_required PASSED [ 90%]
+Application/V3.1/tests/test_safety_rules.py::test_only_new_lines_can_be_added PASSED [ 91%]
+Application/V3.1/tests/test_safety_rules.py::test_unknown_fields_are_dropped_not_sent_to_odoo PASSED [ 93%]
+Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_created PASSED [ 95%]
+Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_read PASSED [ 96%]
+Application/V3.1/tests/test_safety_rules.py::test_localhost_is_replaced_by_ipv4 PASSED [ 98%]
+Application/V3.1/tests/test_safety_rules.py::test_unreachable_odoo_gives_a_clear_error PASSED [100%]
+
+==================================== PASSES ====================================
+============================= slowest 5 durations ==============================
+5.87s call     Application/V3.1/tests/test_api.py::test_abandoned_approvals_do_not_freeze_the_server
+1.15s call     Application/V3.1/tests/test_api.py::test_unanswered_approval_expires
+0.87s setup    Application/V3.1/tests/test_api.py::test_health_reports_odoo_version
+0.87s setup    Application/V3.1/tests/test_odoo_client.py::test_filtering_on_a_forbidden_field_is_blocked
+0.82s setup    Application/V3.1/tests/test_odoo_client.py::test_odoo_errors_are_short
+=========================== short test summary info ============================
+PASSED Application/V3.1/tests/test_api.py::test_health_reports_odoo_version
+PASSED Application/V3.1/tests/test_api.py::test_read_customers
+PASSED Application/V3.1/tests/test_api.py::test_fields_sent_as_text_no_longer_break_the_read
+PASSED Application/V3.1/tests/test_api.py::test_reading_system_users_is_refused
+PASSED Application/V3.1/tests/test_api.py::test_approved_invoice_is_draft_with_odoo_price
+PASSED Application/V3.1/tests/test_api.py::test_declined_order_creates_nothing
+PASSED Application/V3.1/tests/test_api.py::test_unknown_customer_is_rejected
+PASSED Application/V3.1/tests/test_api.py::test_ambiguous_customer_is_asked_not_guessed
+PASSED Application/V3.1/tests/test_api.py::test_pick_from_the_list_without_retyping[2-Jansen Bouw]
+PASSED Application/V3.1/tests/test_api.py::test_pick_from_the_list_without_retyping[jansen & zonen-Jansen & Zonen]
+PASSED Application/V3.1/tests/test_api.py::test_other_reply_is_a_new_request
+PASSED Application/V3.1/tests/test_api.py::test_card_shows_odoo_prices_and_duplicate_warning
+PASSED Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[text]
+PASSED Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[dict]
+PASSED Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[qty-text]
+PASSED Application/V3.1/tests/test_api.py::test_order_lines_in_the_shapes_small_models_send[plural]
+PASSED Application/V3.1/tests/test_api.py::test_twenty_parallel_chats
+PASSED Application/V3.1/tests/test_api.py::test_abandoned_approvals_do_not_freeze_the_server
+PASSED Application/V3.1/tests/test_api.py::test_unanswered_approval_expires
+PASSED Application/V3.1/tests/test_name_matching.py::test_offline_rules
+PASSED Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[partner_id-Pepsi-Pepsi]
+PASSED Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[partner_id-pepsi-Pepsi]
+PASSED Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[product_id-Chair-Chair]
+PASSED Application/V3.1/tests/test_name_matching.py::test_seed_data_resolves[product_id-Floor-Chair Floor Protection]
+PASSED Application/V3.1/tests/test_name_matching.py::test_seed_data_ambiguous_names_ask[Jansen]
+PASSED Application/V3.1/tests/test_name_matching.py::test_seed_data_ambiguous_names_ask[Acme]
+PASSED Application/V3.1/tests/test_name_matching.py::test_seed_data_ambiguous_names_ask[pep]
+PASSED Application/V3.1/tests/test_name_matching.py::test_own_company_and_internal_users_are_never_customers
+PASSED Application/V3.1/tests/test_name_matching.py::test_review_uses_odoo_price_and_total
+PASSED Application/V3.1/tests/test_odoo_client.py::test_forty_parallel_reads_all_succeed
+PASSED Application/V3.1/tests/test_odoo_client.py::test_seed_data_is_present
+PASSED Application/V3.1/tests/test_odoo_client.py::test_fields_sent_as_text_still_work
+PASSED Application/V3.1/tests/test_odoo_client.py::test_unknown_or_forbidden_fields_are_left_out
+PASSED Application/V3.1/tests/test_odoo_client.py::test_filtering_on_a_forbidden_field_is_blocked
+PASSED Application/V3.1/tests/test_odoo_client.py::test_reads_are_limited
+PASSED Application/V3.1/tests/test_odoo_client.py::test_odoo_errors_are_short
+PASSED Application/V3.1/tests/test_odoo_client.py::test_invoice_uses_odoo_price_not_ai_price
+PASSED Application/V3.1/tests/test_odoo_client.py::test_sales_order_is_created_as_draft
+PASSED Application/V3.1/tests/test_safety_rules.py::test_odoo_traceback_becomes_one_short_line
+PASSED Application/V3.1/tests/test_safety_rules.py::test_access_error_is_reported_as_not_allowed
+PASSED Application/V3.1/tests/test_safety_rules.py::test_errors_are_value_errors_so_the_agent_handles_them
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[['name', 'email', 'phone']-expected0]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[["name", "id"]-expected1]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[name, email-expected2]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_lists_sent_as_text_are_understood[raw3-expected3]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_ai_price_is_ignored_and_odoo_price_used
+PASSED Application/V3.1/tests/test_safety_rules.py::test_ai_price_kept_only_when_explicitly_allowed
+PASSED Application/V3.1/tests/test_safety_rules.py::test_only_customer_invoices_can_be_created
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[0]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[-2]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[lots]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_bad_quantities_are_rejected[None]
+PASSED Application/V3.1/tests/test_safety_rules.py::test_customer_must_be_a_real_odoo_id
+PASSED Application/V3.1/tests/test_safety_rules.py::test_at_least_one_line_is_required
+PASSED Application/V3.1/tests/test_safety_rules.py::test_only_new_lines_can_be_added
+PASSED Application/V3.1/tests/test_safety_rules.py::test_unknown_fields_are_dropped_not_sent_to_odoo
+PASSED Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_created
+PASSED Application/V3.1/tests/test_safety_rules.py::test_other_models_cannot_be_read
+PASSED Application/V3.1/tests/test_safety_rules.py::test_localhost_is_replaced_by_ipv4
+PASSED Application/V3.1/tests/test_safety_rules.py::test_unreachable_odoo_gives_a_clear_error
+============================= 60 passed in 24.74s ==============================

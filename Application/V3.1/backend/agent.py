@@ -8,6 +8,10 @@ import time
 from datetime import date
 from ollama import chat as ollama_chat
 
+from backend import resolver
+from backend.odoo_client import _parse_list
+from backend.resolver import MODEL_LABELS, AmbiguousName  # noqa: F401  (re-exported for callers)
+
 # How long the backend waits for the user to click approve/decline before giving up.
 # Before this setting, an unanswered approval blocked a server thread forever.
 APPROVAL_TIMEOUT_SECONDS = int(os.getenv("APPROVAL_TIMEOUT_SECONDS", "300"))
@@ -133,37 +137,12 @@ class _ToolCall:
     def __init__(self, name: str, arguments: dict):
         self.function = _Function(name, arguments)
 
-FIELD_MODEL_MAP = {
-    "partner_id": "res.partner",
-    "product_id": "product.product",
-    "user_id": "res.users",
-}
-
-MODEL_LABELS = {
-    "sale.order": "Sales Order",
-    "res.partner": "Customer",
-    "account.move": "Invoice",
-    "product.product": "Product",
-}
-
-NESTED_LINE_FIELDS = {"order_line", "invoice_line_ids"}
-
 LOOKUP_CONFIG = {
     "customers": ("res.partner", ["id", "name", "email", "city"]),
     "products": ("product.product", ["id", "name", "default_code", "list_price"]),
     "sales_orders": ("sale.order", ["id", "name", "partner_id", "state", "amount_total"]),
     "invoices": ("account.move", ["id", "name", "partner_id", "invoice_date", "state", "amount_total"]),
 }
-
-
-class AmbiguousName(ValueError):
-    """Several Odoo records match a name; the user picks one in the next message."""
-
-    def __init__(self, field: str, raw: str, label: str, candidates: list):
-        self.field, self.raw, self.candidates = field, raw, candidates
-        options = "\n".join(f"{i}. {c['name']}" for i, c in enumerate(candidates, 1))
-        super().__init__(f"More than one {label} matches '{raw}':\n{options}\n"
-                         f"Reply with the number or the full name.")
 
 
 class ConversationAgent:
@@ -243,64 +222,10 @@ class ConversationAgent:
         return self.odoo.create(args["model"], clean_values)
 
     def normalize_structure(self, values: dict, model: str) -> dict:
-        values = dict(values)
-        if model == "sale.order":
-            if "product_id" in values and "order_line" not in values:
-                line = {}
-                for field in ("product_id", "product_uom_qty", "quantity", "price_unit"):
-                    if field in values:
-                        line[field] = values.pop(field)
-                if line.get("quantity") is not None and "product_uom_qty" not in line:
-                    line["product_uom_qty"] = line.pop("quantity")
-                if line:
-                    values["order_line"] = [[0, 0, line]]
-            if "partner_id" in values and isinstance(values.get("partner_id"), str):
-                pass
-        if model == "account.move":
-            if "product_id" in values and "invoice_line_ids" not in values:
-                line = {}
-                for field in ("product_id", "quantity", "price_unit", "product_uom_qty"):
-                    if field in values:
-                        line[field] = values.pop(field)
-                if line.get("product_uom_qty") is not None and "quantity" not in line:
-                    line["quantity"] = line.pop("product_uom_qty")
-                if line:
-                    values["invoice_line_ids"] = [[0, 0, line]]
-        return values
+        return resolver.normalize_structure(values, model)
 
     def resolve_entities(self, values: dict, model: str = None, choices: dict | None = None) -> dict:
-        resolved = {}
-        for field, raw_value in values.items():
-            if field in NESTED_LINE_FIELDS and isinstance(raw_value, list):
-                resolved_lines = []
-                for item in raw_value:
-                    if isinstance(item, list) and len(item) == 3:
-                        resolved_lines.append([item[0], item[1], self.resolve_entities(item[2], model, choices)])
-                    elif isinstance(item, dict):
-                        resolved_lines.append(self.resolve_entities(item, model, choices))
-                    else:
-                        resolved_lines.append(item)
-                resolved[field] = resolved_lines
-            elif field in FIELD_MODEL_MAP and isinstance(raw_value, str):
-                search_model = FIELD_MODEL_MAP[field]
-                # Exact name (any case) wins; else one partial match; several matches -> ask, never guess.
-                # shortcut: % and _ in the name act as wildcards in =ilike, escape them if names ever contain them
-                picked = (choices or {}).get((field, raw_value.strip().lower()))
-                results = [picked] if picked else \
-                    self.odoo.search_read(search_model, [["name", "=ilike", raw_value]], ["name", "id"])
-                if not results:
-                    results = self.odoo.search_read(search_model, [["name", "ilike", raw_value]], ["name", "id"])
-                if not results:
-                    raise ValueError(f"Could not find {search_model} matching '{raw_value}'")
-                if len(results) > 1:
-                    label = MODEL_LABELS.get(search_model, search_model).lower()
-                    # shortcut: only the first 5 matches are offered; a longer list needs a search box in the chat
-                    raise AmbiguousName(field, raw_value, label, results[:5])
-                resolved[field] = results[0]["id"]
-                resolved[f"_resolved_{field}_name"] = results[0]["name"]
-            else:
-                resolved[field] = raw_value
-        return resolved
+        return resolver.resolve_entities(self.odoo, values, model, choices)
 
     def _take_choice(self, conv_id: str, user_message: str):
         """If the last reply asked 'which one?', and this message is a listed number or name, continue that request."""
@@ -391,7 +316,9 @@ class ConversationAgent:
             return None, "I couldn't understand that request. Nothing was changed."
 
         customer = args.get("customer_name")
-        lines = args.get("lines")
+        lines = _parse_list(args.get("lines"))          # llama3.1 sometimes sends the list as text
+        if isinstance(lines, dict):                       # ... or one line without the list around it
+            lines = [lines]
         if not isinstance(customer, str) or not customer.strip():
             return None, "Which customer should I use?"
         if not isinstance(lines, list) or not lines:
@@ -416,6 +343,11 @@ class ConversationAgent:
                 return None, "Please provide each product and quantity in a separate line."
             product = line.get("product_name")
             quantity = line.get("quantity")
+            if isinstance(quantity, str):                 # "3" instead of 3
+                try:
+                    quantity = float(quantity.strip())
+                except ValueError:
+                    pass
             if not isinstance(product, str) or not product.strip():
                 return None, "Which product should I include?"
             if isinstance(quantity, bool) or not isinstance(quantity, (int, float)) or quantity <= 0:
@@ -453,7 +385,7 @@ class ConversationAgent:
         history = self.get_or_create_history(conv_id)
         history.append({'role': 'user', 'content': user_message})
         model_name = os.getenv("OLLAMA_MODEL", "llama3.1")
-        keep_alive = os.getenv("OLLAMA_KEEP_ALIVE", "").strip()
+        keep_alive = os.getenv("OLLAMA_KEEP_ALIVE", "1h").strip()   # avoids the ~40 s cold start after 5 idle minutes
         total_started = time.perf_counter()
         model_ms = 0.0
         backend_ms = 0.0
@@ -491,6 +423,8 @@ class ConversationAgent:
                 tool_calls = []
             elif tool_calls:
                 ai_call = tool_calls[0]
+                self._audit("ai_tool_call", conv_id=conv_id, tool=ai_call.function.name,   # what the model really sent
+                            arguments=json.dumps(ai_call.function.arguments, default=str)[:500])
                 tool_name, tool_args = self._map_intent(
                     ai_call.function.name, ai_call.function.arguments, user_message
                 )
@@ -513,6 +447,7 @@ class ConversationAgent:
                         raw_model = tool_args.get("model", "")
                         normalized = self.normalize_structure(tool_args.get("values", {}), raw_model)
                         resolved_values = self.resolve_entities(normalized, raw_model, choices)
+                        review = resolver.prepare_review(self.odoo, raw_model, resolved_values)
                         tool_args["values"] = resolved_values
                     except ValueError as e:
                         if isinstance(e, AmbiguousName):
@@ -529,6 +464,7 @@ class ConversationAgent:
                         continue
 
                     summary = self._summarize_create(tool_args.get("model", ""), tool_args.get("values", {}))
+                    summary += f" | Total excl. VAT: {review['total_untaxed']:.2f}"
                     event = threading.Event()
                     self.pending_events[conv_id] = event
                     self.pending_confirms[conv_id] = {
@@ -537,11 +473,12 @@ class ConversationAgent:
                         "tool_args": tool_args
                     }
                     self._audit("approval_requested", conv_id=conv_id, model=tool_args.get("model", ""),
-                                summary=summary, user_message=user_message)
+                                summary=summary, user_message=user_message, warnings=review["warnings"])
                     yield {"type": "confirmation_required", "content": json.dumps({
                         "summary": summary,
                         "model": tool_args.get("model", ""),
-                        "values": tool_args.get("values", {})
+                        "values": tool_args.get("values", {}),
+                        "review": review,   # prices/total/warnings for the card only; never sent to Odoo
                     }, default=str)}
 
                     answered = event.wait(timeout=APPROVAL_TIMEOUT_SECONDS)
