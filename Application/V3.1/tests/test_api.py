@@ -102,6 +102,37 @@ def test_unknown_customer_is_rejected(api):
     assert "Could not find" in tool_result(chat(base, "order for unknown customer", "create-3"))["error"]
 
 
+def test_ambiguous_customer_is_asked_not_guessed(api, monkeypatch):
+    base, _ = api
+    from backend import agent as agent_module
+    monkeypatch.setattr(agent_module, "APPROVAL_TIMEOUT_SECONDS", 1)   # if it regresses: fail fast, not hang
+    events = chat(base, "create an invoice for jansen", "ambiguous-1")
+    assert "More than one customer matches 'Jansen'" in tool_result(events)["error"]
+    assert not any(e == "confirmation_required" for e, _ in events)   # nothing to approve, nothing created
+
+
+@pytest.mark.parametrize("answer,expected", [("2", "Jansen Bouw"), ("jansen & zonen", "Jansen & Zonen")])
+def test_pick_from_the_list_without_retyping(api, monkeypatch, answer, expected):
+    base, _ = api
+    from backend import agent as agent_module
+    monkeypatch.setattr(agent_module, "APPROVAL_TIMEOUT_SECONDS", 1)
+    conv = f"pick-{answer}"
+    question = tool_result(chat(base, "create an invoice for jansen", conv))["error"]
+    assert "1. Jansen & Zonen" in question and "2. Jansen Bouw" in question
+    events = chat(base, answer, conv, approve=False)      # the scripted AI can't read "2": the backend handles it
+    card = json.loads(next(d for e, d in events if e == "confirmation_required"))
+    assert card["values"]["_resolved_partner_id_name"] == expected
+    assert tool_result(events)["status"] == "cancelled"
+
+
+def test_other_reply_is_a_new_request(api):
+    base, backend_main = api
+    chat(base, "create an invoice for jansen", "pick-new")
+    events = chat(base, "hello", "pick-new")
+    assert not any(e == "confirmation_required" for e, _ in events)
+    assert "pick-new" not in backend_main.agent.pending_choices
+
+
 def test_twenty_parallel_chats(api):
     base, _ = api
     outcomes = []

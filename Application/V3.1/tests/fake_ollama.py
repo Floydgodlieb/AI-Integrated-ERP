@@ -28,6 +28,9 @@ def _script(messages, has_tools):
     if "order for pepsi" in text:
         return {"tool": ("odoo_create", {"model": "sale.order", "values": {
             "partner_id": "Pepsi", "product_id": "Chair", "product_uom_qty": 2}})}
+    if "invoice for jansen" in text:       # Marija's structured action with an ambiguous customer
+        return {"tool": ("create_invoice", {"customer_name": "Jansen", "invoice_date": None,
+                                            "lines": [{"product_name": "Desk", "quantity": 1}]})}
     if "invoice for pepsi" in text:        # note: the AI invents a price of 10.00 (list price is 50.00)
         return {"tool": ("odoo_create", {"model": "account.move", "values": {
             "partner_id": "Pepsi", "move_type": "out_invoice",

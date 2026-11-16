@@ -63,10 +63,9 @@ Suggested fix: list each line as *product × quantity @ price*, with the price t
 - The AI wrote *"Order Name: (Untitled)"*: the create result only contains the id, so the AI invented a name. (Backend option for Floyd: return Odoo's real name, e.g. `S00003`, in the create result.)
 
 ## Not done yet (needs the team)
-- **Stage 7 – name matching** (exact match first, "did you mean …?"): needs the data-contract decision D3 and a way for the chat to show the question.
+- ~~Stage 7 – name matching~~: **done** (16 Nov) with the D3 default – exact name wins, one partial match is used, several matches → the user is asked.
 - **Stage 8 – duplicate check**: needs a decision on block vs. warn and a warning in the approval screen.
 - **Revoke the leaked secrets** (Odoo password and Teams webhook in V1/V2): a manual task, not code.
-- Name lookups still pick the first partial match (stage 7).
 
 ## Risk to know about
 The limited `ai_agent` user is **allowed by Odoo to confirm sales orders and post invoices** (tested). The AI cannot do this today only because the backend's create allow-list has no such action. Do not add confirm/post actions until approvals, the audit log and the duplicate check are complete – a posted invoice gets a legal number and cannot simply be deleted.
