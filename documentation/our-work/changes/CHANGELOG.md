@@ -23,7 +23,12 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 
 ---
 
-## AI product suggestions, clearer messages (open PR)
+## AI picks the same action every time (open PR)
+- From Floyd's audit log (experiment #13): the same sentence ("sell 4 premium chairs to Luther") once became an order and once a customer lookup.
+- Main AI call now runs at **temperature 0** (same input → same action).
+- Prompt rule: selling/ordering/quoting → `create_sales_order`, invoicing/billing → `create_invoice`, also for names the AI hasn't seen; lookups only when the user asks to show, find or list.
+
+## AI product suggestions, clearer messages ([#7](https://github.com/Floydgodlieb/AI-Integrated-ERP/pull/7), merged 16 Nov 2026)
 From Floyd's second real-AI test (16 Nov):
 - **Unknown product → AI suggestion the user confirms:** "4 premium chairs" used to end in *"Could not find product.product matching 'premium chair'"*. Now the AI picks the closest **real** product from Odoo's list (answer constrained to that list and checked again in code) and the chat asks *"No product named 'premium chair'. Did you mean: 1. Ergonomic Chair"*. Replying `1` continues the request; nothing is accepted silently. Only for products, max 200 names, 30 s time limit; every suggestion is in the audit log (`product_suggestion`).
 - **Clearer not-found message:** "Could not find a product named 'premium chair'." (was the technical model name).
