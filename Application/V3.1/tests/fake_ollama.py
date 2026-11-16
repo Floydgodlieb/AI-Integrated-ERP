@@ -28,6 +28,9 @@ def _script(messages, has_tools):
     if "order for pepsi" in text:
         return {"tool": ("odoo_create", {"model": "sale.order", "values": {
             "partner_id": "Pepsi", "product_id": "Chair", "product_uom_qty": 2}})}
+    if text.startswith("sell product "):    # e.g. "sell product premium chair": product name exactly as typed
+        return {"tool": ("create_sales_order", {"customer_name": "Pepsi",
+                                                "lines": [{"product_name": text[13:], "quantity": 4}]})}
     if text.startswith("sell variant "):   # the shapes small models really send for "sell 3 chairs to Pepsi"
         line = {"product_name": "chairs", "quantity": 3}
         lines = {"text": json.dumps([line]), "dict": line, "qty-text": [{"product_name": "Chair", "quantity": "3"}],
@@ -52,7 +55,12 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        out = _script(body["messages"], bool(body.get("tools")))
+        if body.get("format"):                 # product suggestion call; "golden" returns a name that doesn't exist
+            asked = body["messages"][-1]["content"].lower()
+            name = "Ergonomic Chair" if "premium chair" in asked else "Golden Throne" if "golden" in asked else None
+            out = {"text": json.dumps({"name": name})}
+        else:
+            out = _script(body["messages"], bool(body.get("tools")))
         base = {"model": body["model"], "created_at": "2026-01-01T00:00:00Z"}
         self.send_response(200)
         self.send_header("Content-Type", "application/x-ndjson")

@@ -23,7 +23,14 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 
 ---
 
-## Approval card with Odoo prices, duplicate warning, and fixes from Floyd's real-AI test (open PR)
+## AI product suggestions, clearer messages (open PR)
+From Floyd's second real-AI test (16 Nov):
+- **Unknown product → AI suggestion the user confirms:** "4 premium chairs" used to end in *"Could not find product.product matching 'premium chair'"*. Now the AI picks the closest **real** product from Odoo's list (answer constrained to that list and checked again in code) and the chat asks *"No product named 'premium chair'. Did you mean: 1. Ergonomic Chair"*. Replying `1` continues the request; nothing is accepted silently. Only for products, max 200 names, 30 s time limit; every suggestion is in the audit log (`product_suggestion`).
+- **Clearer not-found message:** "Could not find a product named 'premium chair'." (was the technical model name).
+- **No more "Search limit must be between 1 and 50":** an odd limit from the AI is clamped to 1–50.
+- Note for Marija: this adds a second AI call, but only when a product name matches nothing.
+
+## Approval card with Odoo prices, duplicate warning, and fixes from Floyd's real-AI test ([#6](https://github.com/Floydgodlieb/AI-Integrated-ERP/pull/6), merged 16 Nov 2026)
 - **Bug fix (seen with the real llama3.1):** "I want to sell 3 chairs to Acme" kept answering *"Which product and quantity should I include?"*. Small models send the product lines in other shapes (as text, as one entry without a list, quantity as `"3"`) or in the plural ("chairs"). The backend now accepts these shapes and retries a name without its trailing "s". Each raw AI call is written to the audit log (`ai_tool_call`) so the next failure shows what the model sent.
 - **Approval card shows money:** each line as product × quantity @ Odoo list price = subtotal, plus the total excl. VAT. Prices are read from Odoo, never taken from the AI.
 - **Duplicate warning (stage 8):** a draft for the same customer with the same amount in the last 24 hours → warning on the card; approving is still possible.

@@ -1,7 +1,7 @@
 # Test results
 
 Two kinds of evidence:
-1. **Automated tests** (`Application/V3.1/tests/`, 60 tests). The AI is a **scripted stand-in** (`tests/fake_ollama.py`) that reproduces llama3.1's real mistakes – so these test the backend, not the AI's quality.
+1. **Automated tests** (`Application/V3.1/tests/`, 64 tests). The AI is a **scripted stand-in** (`tests/fake_ollama.py`) that reproduces llama3.1's real mistakes – so these test the backend, not the AI's quality.
 2. **Manual tests with the real AI** (`llama3.1` via Ollama), checked against Odoo.
 
 Measurements and what we learned from them are in the [experiment log](../experiments/EXPERIMENT-LOG.md); this file is the test record.
@@ -14,19 +14,20 @@ From the repo folder (Odoo running with the seed data, `Application\V3.1\.env` f
 It saves the full report in [`runs/`](runs/) and prints a table row – paste that row into the table below and commit both.
 (The tests create a few draft quotations/invoices in your Odoo database.)
 
-## What the automated tests cover (60)
+## What the automated tests cover (64)
 | File | Tests | Needs Odoo? | What |
 |---|---|---|---|
 | `test_safety_rules.py` | 22 | No | Error cleaning, lists sent as text, price rule, only customer invoices, quantity/customer/line checks, unknown fields dropped, forbidden models refused, `localhost` → `127.0.0.1`, unreachable Odoo |
 | `test_odoo_client.py` | 9 | Yes | 40 parallel reads, seed data present, "fields as text", forbidden fields/filters, row limit, short Odoo errors, invoice priced by Odoo, order stays draft |
-| `test_name_matching.py` | 10 | 9 of 10 | Names → Odoo ids: exact name wins (Pepsi, not Pepsi Cola Bottling; Chair, not Ergonomic Chair), any case, single partial match used, ambiguous names (Jansen, Acme, pep) are asked, own company / internal users never match, card review uses the Odoo price and total |
-| `test_api.py` | 19 | Yes | Full chain browser → API → agent → scripted AI → Odoo: health, reads, refused reads, approve/decline, unknown customer, ambiguous customer via Marija's `create_invoice` action + picking from the list (number / name / new request), card prices + duplicate warning, order lines in the shapes small models send (text, single entry, quantity as text, plural), 20 parallel chats, 45 abandoned approvals, approval expiry |
+| `test_name_matching.py` | 11 | 9 of 11 | Names → Odoo ids: exact name wins (Pepsi, not Pepsi Cola Bottling; Chair, not Ergonomic Chair), any case, single partial match used, ambiguous names (Jansen, Acme, pep) are asked, own company / internal users never match, card review uses the Odoo price and total, a failing AI suggestion call means plain not-found |
+| `test_api.py` | 22 | 21 of 22 | Full chain browser → API → agent → scripted AI → Odoo: health, reads, refused reads, approve/decline, unknown customer, ambiguous customer via Marija's `create_invoice` action + picking from the list (number / name / new request), card prices + duplicate warning, order lines in the shapes small models send (text, single entry, quantity as text, plural), AI product suggestion confirmed by the user, fake suggestion ignored, search limit clamped, 20 parallel chats, 45 abandoned approvals, approval expiry |
 
-Without Odoo running, the 37 Odoo tests are skipped and the 23 offline tests still run. Manual checklist: [MANUAL-TEST-CHECKLIST.md](MANUAL-TEST-CHECKLIST.md).
+Without Odoo running, the 39 Odoo tests are skipped and the 25 offline tests still run. Manual checklist: [MANUAL-TEST-CHECKLIST.md](MANUAL-TEST-CHECKLIST.md).
 
 ## Automated test runs
 | Date | Who | OS | Python | Odoo | Commit | Result | Report |
 |---|---|---|---|---|---|---|---|
+| 2026-11-16 12:23 | lab-linux | Linux | 3.13.18 | 20.0-20261102 | `1a6a3bb` + this PR | ✅ 64 passed in 20.76s | [report](runs/2026-11-16_1223_lab-linux.txt) |
 | 2026-11-16 12:10 | lab-linux | Linux | 3.13.18 | 20.0-20261102 | `f6bb128` + this PR | ✅ 60 passed in 24.74s; chat UI build + ESLint clean | [report](runs/2026-11-16_1210_lab-linux.txt) |
 | 2026-11-16 11:45 | lab-linux | Linux | 3.13.18 | 20.0-20261102 | `ef7b9f1` + pick-from-list | ✅ 53 passed in 18.27s | [report](runs/2026-11-16_1145_lab-linux.txt) |
 | 2026-11-16 11:36 | lab-linux | Linux | 3.13.18 | 20.0-20261102 | `9c8aae2` + name-matching fix | ✅ 50 passed in 18.22s (Marija's work + name matching) | [report](runs/2026-11-16_1136_lab-linux.txt) |
@@ -50,6 +51,8 @@ Rows without a report were run before `run_tests.py` existed. **To do:** a full 
 ## Manual tests with the real AI (Floyd's PC: RTX 3070 Ti, `llama3.1`, Odoo 20.0.20261109)
 | Date | Version | Test | Result | Experiment |
 |---|---|---|---|---|
+| 16 Nov | V3.1 (`f6bb128`) | Anastasia's browser QA (macOS, two Chrome sessions, scripted AI): approval, rejection, ambiguous customer, Odoo pricing, simultaneous sessions | ✅ all pass – [report](runs/2026-11-16_anastasia-macos-browser-qa.md) | – |
+| 16 Nov | V3.1 (`f6bb128`) | Floyd, real llama3.1: Acme question → pick 1, "4 ergonomic chairs", delete refused, invoice from sales order | ✅ ordering works; ❌ "premium chairs" not found (now: AI suggestion), confusing search-limit error (fixed), **invoicing an existing sales order not supported yet** | – |
 | 10 Nov | V3 (original) | "Show me all customers" | ❌ Odoo error (fields sent as text), then the AI **invented customers** | #2 |
 | 12 Nov | V3.1 | "Show me all customers" | ✅ Real 17 contacts, text matched (~45 s cold, almost instant warm) | #6, #7 |
 | 12 Nov | V3.1 | "Create a sales order for Pepsi with 2 Chair" + approve | ✅ Draft quotation created | #8 |

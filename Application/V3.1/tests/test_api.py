@@ -158,6 +158,28 @@ def test_order_lines_in_the_shapes_small_models_send(api, monkeypatch, variant):
     assert (line["_resolved_product_id_name"], line["product_uom_qty"]) == ("Chair", 3)
 
 
+def test_unknown_product_gets_an_ai_suggestion_the_user_confirms(api, monkeypatch):
+    base, _ = api
+    from backend import agent as agent_module
+    monkeypatch.setattr(agent_module, "APPROVAL_TIMEOUT_SECONDS", 1)
+    question = tool_result(chat(base, "sell product premium chair", "suggest-1"))["error"]
+    assert "No product named 'premium chair'. Did you mean:\n1. Ergonomic Chair" in question   # not accepted silently
+    card = json.loads(next(d for e, d in chat(base, "1", "suggest-1", approve=False) if e == "confirmation_required"))
+    assert card["values"]["order_line"][0][2]["_resolved_product_id_name"] == "Ergonomic Chair"
+
+
+def test_ai_suggestion_that_is_not_a_real_product_is_ignored(api):
+    base, _ = api
+    error = tool_result(chat(base, "sell product golden thing", "suggest-2"))["error"]
+    assert error == "Could not find a product named 'golden thing'."
+
+
+def test_odd_search_limit_is_clamped():
+    from backend.agent import ConversationAgent
+    agent = ConversationAgent(odoo_client=None)
+    assert [agent._lookup_args({"what": "products", "limit": n})["limit"] for n in (0, 100, "7", None, "x")] == [10, 50, 7, 10, 10]
+
+
 def test_twenty_parallel_chats(api):
     base, _ = api
     outcomes = []

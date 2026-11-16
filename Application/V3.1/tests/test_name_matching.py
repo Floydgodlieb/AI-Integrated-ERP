@@ -11,7 +11,7 @@ class StubOdoo:
     def internal_partner_ids(self):
         return []
 
-    def search_read(self, model, domain, fields):
+    def search_read(self, model, domain, fields, limit=None):
         _, op, text = domain[0]
         hit = (lambda n: n.lower() == text.lower()) if op == "=ilike" else (lambda n: text.lower() in n.lower())
         return [{"id": i, "name": n} for i, n in enumerate(self.names.get(model, []), 1) if hit(n)]
@@ -60,3 +60,20 @@ def test_review_uses_odoo_price_and_total(odoo):
     review = resolver.prepare_review(odoo, "account.move", values)
     assert values["invoice_line_ids"][0][2]["_resolved_product_id_price"] == 50.0      # Odoo price, not the AI's 10.00
     assert review["total_untaxed"] == 150.0
+
+
+def test_failing_suggestion_call_means_plain_not_found(monkeypatch):
+    from backend import agent as agent_module
+
+    class BrokenClient:                     # e.g. the model is too slow and times out
+        def __init__(self, **kw):
+            pass
+
+        def chat(self, **kw):
+            raise TimeoutError("model too slow")
+
+    monkeypatch.setattr(agent_module, "Client", BrokenClient)
+    agent = ConversationAgent(StubOdoo())
+    assert agent._suggest_product("premium chair", ["Chair", "Ergonomic Chair"]) is None
+    with pytest.raises(ValueError, match="Could not find a customer named 'Globex'"):   # customers never get suggestions
+        agent.resolve_entities({"partner_id": "Globex"})
