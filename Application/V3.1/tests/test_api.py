@@ -102,8 +102,10 @@ def test_unknown_customer_is_rejected(api):
     assert "Could not find" in tool_result(chat(base, "order for unknown customer", "create-3"))["error"]
 
 
-def test_ambiguous_customer_is_asked_not_guessed(api):
+def test_ambiguous_customer_is_asked_not_guessed(api, monkeypatch):
     base, _ = api
+    from backend import agent as agent_module
+    monkeypatch.setattr(agent_module, "APPROVAL_TIMEOUT_SECONDS", 1)   # if it regresses: fail fast, not hang
     events = chat(base, "create an invoice for jansen", "ambiguous-1")
     assert "More than one customer matches 'Jansen'" in tool_result(events)["error"]
     assert not any(e == "confirmation_required" for e, _ in events)   # nothing to approve, nothing created
