@@ -66,3 +66,12 @@ Tests read Odoo credentials from `Application/V3.1/.env` or `TEST_ODOO_URL/DB/US
 - Every PR adds an entry to `documentation/our-work/changes/CHANGELOG.md`.
 - Test runs → `documentation/our-work/tests/TEST-RESULTS.md` (+ report from `Setup/run_tests.py`); measurements/real-AI findings → `documentation/our-work/experiments/EXPERIMENT-LOG.md`; decisions → `documentation/our-work/decisions/DECISIONS.md`.
 - Work on a branch and merge to `main` via pull request.
+- Changes to the PRD (`documentation/previous-group/product/prd.md` is the starting point) or the build plan are logged in `DECISIONS.md` with the reason.
+
+## Build workflow (agreed with the supervisor, 16 Nov 2026)
+- Work in phases from the build plan; each phase ends with a **test gate** (`pytest Application/V3.1/tests`, plus `npm run lint && npm run build` if the UI changed).
+- Commit and push only when the gate passes, and push after every phase so teammates can pull the latest before they start.
+
+## Reports for people
+- Reports, overviews and status pages meant for humans (team, supervisor) are a single self-contained HTML page: D3 for charts, Three.js for 3D/visual pieces, Motion (motion.dev) for animation, loaded from a CDN. Include diagrams, flowcharts and animated or interactive demos (e.g. step through the request flow).
+- Numbers and claims come from the Markdown records above (CHANGELOG, TEST-RESULTS, EXPERIMENT-LOG, DECISIONS), which stay the source of truth; never invent data for a chart.
