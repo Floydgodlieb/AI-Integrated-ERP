@@ -30,6 +30,13 @@ Always write **where** it was measured (whose PC / which environment) and whethe
 | 12 | 12 Nov | Floyd / F-PC, real AI | Does keeping the model loaded remove the cold start? | `setx OLLAMA_KEEP_ALIVE 24h`, restart Ollama; `ollama ps` shows "24 hours from now", 100% GPU, 5.3 GB | First chat message after 10+ min idle, stopwatch | ✅ **2–3 s instead of ~40–45 s** | Biggest latency win so far. Make it permanent in code (`keep_alive` in the AI call) so it works on every PC. Costs 5.3 GB of GPU memory while loaded |
 
 ## Open questions (next experiments)
+Run the real-AI extraction baseline on a fast PC (Marija's Mac timed out), from `Application\V3.1`, and log the results as #13 (llama3.1) and #14 (qwen3:8b):
+```
+..\..\.venv\Scripts\python.exe scripts\replay_extraction.py --model llama3.1
+ollama pull qwen3:8b
+..\..\.venv\Scripts\python.exe scripts\replay_extraction.py --model qwen3:8b
+```
+
 - Can `llama3.1` fill the draft data-contract schema with Ollama structured output? (`documentation/our-work/design/data-contract/DATA-CONTRACT.md` §5)
 - `llama3.1` vs `qwen3:8b` on the same prompts: % valid output, % right action, seconds (warm and cold).
 - How do long chats behave with the 4,096-token context?

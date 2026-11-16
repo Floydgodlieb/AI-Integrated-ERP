@@ -23,12 +23,21 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 
 ---
 
-## Name matching: ask instead of guessing (this PR)
+## Approval card with Odoo prices, duplicate warning, and fixes from Floyd's real-AI test (open PR)
+- **Bug fix (seen with the real llama3.1):** "I want to sell 3 chairs to Acme" kept answering *"Which product and quantity should I include?"*. Small models send the product lines in other shapes (as text, as one entry without a list, quantity as `"3"`) or in the plural ("chairs"). The backend now accepts these shapes and retries a name without its trailing "s". Each raw AI call is written to the audit log (`ai_tool_call`) so the next failure shows what the model sent.
+- **Approval card shows money:** each line as product × quantity @ Odoo list price = subtotal, plus the total excl. VAT. Prices are read from Odoo, never taken from the AI.
+- **Duplicate warning (stage 8):** a draft for the same customer with the same amount in the last 24 hours → warning on the card; approving is still possible.
+- **Own company and internal users** (My Company, Administrator, AI Agent, OdooBot) can no longer be matched as customers.
+- **Keep-alive default 1 h** (code and `.env.example`): no ~40 s cold start after 5 idle minutes on any PC.
+- **`backend/resolver.py`:** the name-matching code moved out of `agent.py` (no behaviour change), so Floyd's and Marija's code are in separate files.
+- Docs: manual test checklist for Anastasia (`tests/MANUAL-TEST-CHECKLIST.md`); Marija's weekly report moved to `planning/weekly-reports/`; branches `marija-ai-chat` and `marija-weekly-task` are fully merged and can be deleted on GitHub.
+
+## Name matching: ask instead of guessing ([#5](https://github.com/Floydgodlieb/AI-Integrated-ERP/pull/5), merged 16 Nov 2026)
 - `agent.py` `resolve_entities`: an exact name (any case) wins; otherwise a single partial match is used (the approval card shows the full Odoo name); several matches → the user gets a numbered list and **picks one by replying with the number or the name**; the same request then continues without asking the AI again (anything else counts as a new request). Before: the first partial match was silently used.
 - 12 new tests (`test_name_matching.py`; end-to-end via Marija's `create_invoice` action: ambiguous name asked, pick by number, pick by name, other reply = new request). 4 fail on the old code. 53 tests pass.
 
 ## Marija – V3.1 chat and structured AI actions (pushed directly to `main`, 14 Nov 2026, `9c8aae2`)
-- One structured AI action per message (names and quantities only, no ids or prices); one AI call per message; result and error texts written by the app; line breaks fixed; approval card with customer and product lines; model settings, timing records, extraction replay script. Details: `MARIA-WEEKLY-TASK.md`.
+- One structured AI action per message (names and quantities only, no ids or prices); one AI call per message; result and error texts written by the app; line breaks fixed; approval card with customer and product lines; model settings, timing records, extraction replay script. Details: [her weekly report](../planning/weekly-reports/2026-11-14-MARIJA.md).
 
 ## PR #3 – Documentation restructure, test results, changelog (merged 12 Nov 2026)
 - `documentation/` split into `previous-group/` (their documents, content untouched, clean file names) and `our-work/` (handover, planning, changes, tests, experiments, design, decisions).

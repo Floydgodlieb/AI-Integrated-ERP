@@ -6,6 +6,9 @@ When a data-contract decision is made, also tick it in [DATA-CONTRACT.md](../des
 ## Decided
 | Date | Decision | Why | Alternatives considered | Who |
 |---|---|---|---|---|
+| 2026-11-16 | Duplicate check **warns** on the approval card (same customer + same amount in 24 h), never blocks. **Team may still change it.** | Repeat orders are normal; a human decides | Block duplicates | Floyd |
+| 2026-11-16 | Own company and internal users are never matched as customers | A request could otherwise be addressed to "My Company" | Only customers with sales history (would hide new customers) | Floyd |
+| 2026-11-16 | Ollama keep-alive default 1 h (24 h on the demo PC) | Cold start ~40–45 s vs 2–3 s warm (experiment 12) | Per-PC setting only | Floyd |
 | 2026-11-16 | D3 name matching implemented with the recommended default: exact name (any case) wins; one partial match is used; several matches → ask the user. **Team may still change it.** | The old code silently used the first partial match ("Jansen" → one of two customers) | Ask on every partial match | Floyd |
 | 2026-11-12 | Our version lives in `Application/V3.1`; the previous group's V3 stays unchanged; `V4` is reserved for the redesign | Clear before/after comparisons; V3.1 = hardened V3, V4 = new design | Rename to V4 now; keep editing V3 in place | Floyd |
 | 2026-11-12 | Odoo 20 Community, database `odoo`, Sales + Invoicing, Netherlands, no demo data, limited `ai_agent` user | Same setup for everyone; AI never runs as administrator | Odoo 19; admin login | Floyd |
@@ -19,7 +22,6 @@ When a data-contract decision is made, also tick it in [DATA-CONTRACT.md](../des
 | Ownership of `agent.py` | Floyd first moves resolution/validation/approval into own files (no behaviour change), then Marija owns the rest |
 | Data contract D1, D3, D4, D5, D8, D10 | See the recommendations in the handoff |
 | Approval box content | Backend sends lines (product × qty @ Odoo price), total excl. VAT, warnings; chat shows all of it |
-| Duplicate check | Warn, don't block (name matching is decided, see above) |
-| Model and keep-alive | Keep-alive in code (default 1 h, demo PC 24 h); compare llama3.1, qwen3:8b and one small model on the same test set |
+| Model choice | Compare llama3.1, qwen3:8b and one small model on the same test set (keep-alive is decided, see above) |
 | Test-set format | One row per prompt, based on `contract_examples.json` |
 | When to start V4 | Copy V3.1 → V4 when the contract work starts; freeze V3.1 |

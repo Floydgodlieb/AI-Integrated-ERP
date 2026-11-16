@@ -64,7 +64,7 @@ Suggested fix: list each line as *product × quantity @ price*, with the price t
 
 ## Not done yet (needs the team)
 - ~~Stage 7 – name matching~~: **done** (16 Nov) with the D3 default – exact name wins, one partial match is used, several matches → the user is asked.
-- **Stage 8 – duplicate check**: needs a decision on block vs. warn and a warning in the approval screen.
+- ~~Stage 8 – duplicate check~~: **done** (16 Nov) – warns on the approval card (same customer, same amount, last 24 h); does not block.
 - **Revoke the leaked secrets** (Odoo password and Teams webhook in V1/V2): a manual task, not code.
 
 ## Risk to know about
