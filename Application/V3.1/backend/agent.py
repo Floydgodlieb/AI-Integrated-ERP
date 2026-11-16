@@ -1,3 +1,4 @@
+import copy
 import json
 import ast
 import os
@@ -155,12 +156,23 @@ LOOKUP_CONFIG = {
 }
 
 
+class AmbiguousName(ValueError):
+    """Several Odoo records match a name; the user picks one in the next message."""
+
+    def __init__(self, field: str, raw: str, label: str, candidates: list):
+        self.field, self.raw, self.candidates = field, raw, candidates
+        options = "\n".join(f"{i}. {c['name']}" for i, c in enumerate(candidates, 1))
+        super().__init__(f"More than one {label} matches '{raw}':\n{options}\n"
+                         f"Reply with the number or the full name.")
+
+
 class ConversationAgent:
     def __init__(self, odoo_client):
         self.odoo = odoo_client
         self.conversations = {}
         self.pending_confirms = {}
         self.pending_events = {}
+        self.pending_choices = {}   # conv_id -> request waiting for the user to pick a name
 
     def set_confirmation(self, conv_id: str, approved: bool):
         if conv_id in self.pending_confirms:
@@ -202,6 +214,7 @@ class ConversationAgent:
 
     def clear_history(self, conv_id: str):
         self.conversations.pop(conv_id, None)
+        self.pending_choices.pop(conv_id, None)
 
     def execute_search_read(self, args: dict):
         domain = args.get("domain", [])
@@ -255,16 +268,16 @@ class ConversationAgent:
                     values["invoice_line_ids"] = [[0, 0, line]]
         return values
 
-    def resolve_entities(self, values: dict, model: str = None) -> dict:
+    def resolve_entities(self, values: dict, model: str = None, choices: dict | None = None) -> dict:
         resolved = {}
         for field, raw_value in values.items():
             if field in NESTED_LINE_FIELDS and isinstance(raw_value, list):
                 resolved_lines = []
                 for item in raw_value:
                     if isinstance(item, list) and len(item) == 3:
-                        resolved_lines.append([item[0], item[1], self.resolve_entities(item[2], model)])
+                        resolved_lines.append([item[0], item[1], self.resolve_entities(item[2], model, choices)])
                     elif isinstance(item, dict):
-                        resolved_lines.append(self.resolve_entities(item, model))
+                        resolved_lines.append(self.resolve_entities(item, model, choices))
                     else:
                         resolved_lines.append(item)
                 resolved[field] = resolved_lines
@@ -272,21 +285,34 @@ class ConversationAgent:
                 search_model = FIELD_MODEL_MAP[field]
                 # Exact name (any case) wins; else one partial match; several matches -> ask, never guess.
                 # shortcut: % and _ in the name act as wildcards in =ilike, escape them if names ever contain them
-                results = self.odoo.search_read(search_model, [["name", "=ilike", raw_value]], ["name", "id"])
+                picked = (choices or {}).get((field, raw_value.strip().lower()))
+                results = [picked] if picked else \
+                    self.odoo.search_read(search_model, [["name", "=ilike", raw_value]], ["name", "id"])
                 if not results:
                     results = self.odoo.search_read(search_model, [["name", "ilike", raw_value]], ["name", "id"])
                 if not results:
                     raise ValueError(f"Could not find {search_model} matching '{raw_value}'")
                 if len(results) > 1:
                     label = MODEL_LABELS.get(search_model, search_model).lower()
-                    names = ", ".join(r["name"] for r in results[:5]) + (", ..." if len(results) > 5 else "")
-                    raise ValueError(f"More than one {label} matches '{raw_value}': {names}. "
-                                     f"Please repeat the request with the full name.")
+                    # shortcut: only the first 5 matches are offered; a longer list needs a search box in the chat
+                    raise AmbiguousName(field, raw_value, label, results[:5])
                 resolved[field] = results[0]["id"]
                 resolved[f"_resolved_{field}_name"] = results[0]["name"]
             else:
                 resolved[field] = raw_value
         return resolved
+
+    def _take_choice(self, conv_id: str, user_message: str):
+        """If the last reply asked 'which one?', and this message is a listed number or name, continue that request."""
+        pending = self.pending_choices.pop(conv_id, None)
+        if not pending:
+            return None
+        answer = user_message.strip().rstrip(".").lower()
+        for i, candidate in enumerate(pending["candidates"], 1):
+            if answer in (str(i), candidate["name"].lower()):
+                key = (pending["field"], pending["raw"].strip().lower())
+                return pending["tool_args"], {**pending["choices"], key: candidate}
+        return None   # anything else is a new request
 
     def _summarize_create(self, model: str, values: dict) -> str:
         label = MODEL_LABELS.get(model, model)
@@ -434,39 +460,45 @@ class ConversationAgent:
 
         yield {"type": "status", "content": "Thinking..."}
 
-        call_options = {"model": model_name, "messages": history, "tools": TOOLS}
-        if keep_alive:
-            call_options["keep_alive"] = keep_alive
-        model_started = time.perf_counter()
-        try:
-            response = ollama_chat(**call_options)
-        except Exception:
-            text = f"I couldn't reach the AI model '{model_name}'. Check that Ollama is running and the model is available."
-            yield {"type": "token", "content": text}
-            history.append({'role': 'assistant', 'content': text})
-            total_ms = (time.perf_counter() - total_started) * 1000
-            timings = {"model_ms": round(total_ms, 1), "backend_ms": 0, "total_ms": round(total_ms, 1)}
-            self._audit("chat_timing", model=model_name, **timings)
-            yield {"type": "metrics", "content": timings}
-            yield {"type": "done", "content": ""}
-            return
-        model_ms = (time.perf_counter() - model_started) * 1000
+        picked = self._take_choice(conv_id, user_message)
+        choices = {}
+        if picked:   # the user answered 'which one?': continue that request without asking the AI again
+            picked_args, choices = picked
+            tool_calls, direct_text = [_ToolCall("odoo_create", picked_args)], None
+        else:
+            call_options = {"model": model_name, "messages": history, "tools": TOOLS}
+            if keep_alive:
+                call_options["keep_alive"] = keep_alive
+            model_started = time.perf_counter()
+            try:
+                response = ollama_chat(**call_options)
+            except Exception:
+                text = f"I couldn't reach the AI model '{model_name}'. Check that Ollama is running and the model is available."
+                yield {"type": "token", "content": text}
+                history.append({'role': 'assistant', 'content': text})
+                total_ms = (time.perf_counter() - total_started) * 1000
+                timings = {"model_ms": round(total_ms, 1), "backend_ms": 0, "total_ms": round(total_ms, 1)}
+                self._audit("chat_timing", model=model_name, **timings)
+                yield {"type": "metrics", "content": timings}
+                yield {"type": "done", "content": ""}
+                return
+            model_ms = (time.perf_counter() - model_started) * 1000
 
-        tool_calls = response.message.tool_calls or []
-        direct_text = None
-        if len(tool_calls) > 1:
-            direct_text = "Please send one request at a time. Nothing was changed."
-            tool_calls = []
-        elif tool_calls:
-            ai_call = tool_calls[0]
-            tool_name, tool_args = self._map_intent(
-                ai_call.function.name, ai_call.function.arguments, user_message
-            )
-            if tool_name is None:
-                direct_text = tool_args
+            tool_calls = response.message.tool_calls or []
+            direct_text = None
+            if len(tool_calls) > 1:
+                direct_text = "Please send one request at a time. Nothing was changed."
                 tool_calls = []
-            else:
-                tool_calls = [_ToolCall(tool_name, tool_args)]
+            elif tool_calls:
+                ai_call = tool_calls[0]
+                tool_name, tool_args = self._map_intent(
+                    ai_call.function.name, ai_call.function.arguments, user_message
+                )
+                if tool_name is None:
+                    direct_text = tool_args
+                    tool_calls = []
+                else:
+                    tool_calls = [_ToolCall(tool_name, tool_args)]
 
         if tool_calls:
             tool_model = tool_calls[0].function.arguments.get("model", "")
@@ -480,9 +512,13 @@ class ConversationAgent:
                     try:
                         raw_model = tool_args.get("model", "")
                         normalized = self.normalize_structure(tool_args.get("values", {}), raw_model)
-                        resolved_values = self.resolve_entities(normalized, raw_model)
+                        resolved_values = self.resolve_entities(normalized, raw_model, choices)
                         tool_args["values"] = resolved_values
                     except ValueError as e:
+                        if isinstance(e, AmbiguousName):
+                            self.pending_choices[conv_id] = {"tool_args": copy.deepcopy(tool_args), "choices": choices,
+                                                             "field": e.field, "raw": e.raw,
+                                                             "candidates": e.candidates}
                         tool_result = {"error": str(e)}
                         history.append({
                             'role': 'tool',

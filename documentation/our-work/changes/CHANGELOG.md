@@ -24,8 +24,8 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 ---
 
 ## Name matching: ask instead of guessing (this PR)
-- `agent.py` `resolve_entities`: an exact name (any case) wins; otherwise a single partial match is used (the approval card shows the full Odoo name); several matches → the user is asked, nothing is prepared. Before: the first partial match was silently used.
-- 9 new tests (`test_name_matching.py`, one end-to-end test via Marija's `create_invoice` action). 4 of them fail on the old code. 50 tests pass.
+- `agent.py` `resolve_entities`: an exact name (any case) wins; otherwise a single partial match is used (the approval card shows the full Odoo name); several matches → the user gets a numbered list and **picks one by replying with the number or the name**; the same request then continues without asking the AI again (anything else counts as a new request). Before: the first partial match was silently used.
+- 12 new tests (`test_name_matching.py`; end-to-end via Marija's `create_invoice` action: ambiguous name asked, pick by number, pick by name, other reply = new request). 4 fail on the old code. 53 tests pass.
 
 ## Marija – V3.1 chat and structured AI actions (pushed directly to `main`, 14 Nov 2026, `9c8aae2`)
 - One structured AI action per message (names and quantities only, no ids or prices); one AI call per message; result and error texts written by the app; line breaks fixed; approval card with customer and product lines; model settings, timing records, extraction replay script. Details: `MARIA-WEEKLY-TASK.md`.

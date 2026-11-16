@@ -20,8 +20,10 @@ def resolve(odoo, **values):
 
 def test_offline_rules():
     assert resolve(StubOdoo(), partner_id="pepsi")["_resolved_partner_id_name"] == "Pepsi"
-    with pytest.raises(ValueError, match="More than one customer matches 'Jansen': Jansen Bouw, Jansen & Zonen"):
+    with pytest.raises(ValueError, match="More than one customer matches 'Jansen':\n1. Jansen Bouw\n2. Jansen & Zonen"):
         resolve(StubOdoo(), partner_id="Jansen")
+    picked = {("partner_id", "jansen"): {"id": 4, "name": "Jansen & Zonen"}}     # the user's answer "2"
+    assert ConversationAgent(StubOdoo()).resolve_entities({"partner_id": "Jansen"}, choices=picked)["partner_id"] == 4
     with pytest.raises(ValueError, match="Could not find"):
         resolve(StubOdoo(), partner_id="Globex")
 
