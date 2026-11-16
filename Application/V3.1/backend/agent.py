@@ -6,7 +6,7 @@ import re
 import threading
 import time
 from datetime import date
-from ollama import chat as ollama_chat
+from ollama import Client, chat as ollama_chat
 
 from backend import resolver
 from backend.odoo_client import _parse_list
@@ -225,7 +225,31 @@ class ConversationAgent:
         return resolver.normalize_structure(values, model)
 
     def resolve_entities(self, values: dict, model: str = None, choices: dict | None = None) -> dict:
-        return resolver.resolve_entities(self.odoo, values, model, choices)
+        return resolver.resolve_entities(self.odoo, values, model, choices, suggest=self._suggest_product)
+
+    def _suggest_product(self, text: str, names: list) -> str | None:
+        """Ask the AI which real product best fits a name that matched nothing ("premium chair" -> "Ergonomic Chair").
+
+        The answer is constrained to the given names (or null), checked again by the resolver, and only offered
+        to the user as a choice. Any problem (timeout, odd answer) just means: no suggestion.
+        """
+        if not names:
+            return None
+        schema = {"type": "object", "properties": {"name": {"enum": names + [None]}}, "required": ["name"]}
+        options = {"model": os.getenv("OLLAMA_MODEL", "llama3.1"), "format": schema, "options": {"temperature": 0},
+                   "messages": [{"role": "system", "content": "Pick the product from the list that best matches what the "
+                                 "user means, or null if none fits. Answer only with JSON."},
+                                {"role": "user", "content": f"User wrote: {text}\nProducts: {json.dumps(names)}"}]}
+        keep_alive = os.getenv("OLLAMA_KEEP_ALIVE", "1h").strip()
+        if keep_alive:
+            options["keep_alive"] = keep_alive
+        try:
+            reply = Client(timeout=float(os.getenv("SUGGEST_TIMEOUT_SECONDS", "30"))).chat(**options)
+            guess = json.loads(reply.message.content or "{}").get("name")
+        except Exception:
+            guess = None
+        self._audit("product_suggestion", text=text, suggestion=guess)
+        return guess if guess in names else None
 
     def _take_choice(self, conv_id: str, user_message: str):
         """If the last reply asked 'which one?', and this message is a listed number or name, continue that request."""
@@ -278,9 +302,10 @@ class ConversationAgent:
         search_text = args.get("search_text")
         if search_text is not None and not isinstance(search_text, str):
             raise ValueError("Search text must be a name or reference.")
-        limit = args.get("limit", 10)
-        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
-            raise ValueError("Search limit must be between 1 and 50.")
+        try:   # the AI sometimes sends 0, 100 or "10": clamp instead of failing the request
+            limit = min(max(int(args.get("limit") or 10), 1), 50)
+        except (TypeError, ValueError):
+            limit = 10
 
         if what == "customers":
             domain = [["customer_rank", ">", 0]]

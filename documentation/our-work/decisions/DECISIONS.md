@@ -6,6 +6,7 @@ When a data-contract decision is made, also tick it in [DATA-CONTRACT.md](../des
 ## Decided
 | Date | Decision | Why | Alternatives considered | Who |
 |---|---|---|---|---|
+| 2026-11-16 | For an unknown product name the AI may **suggest** one real product; the user must confirm it (reply 1 / the name) and then approve the card | "premium chair" → Ergonomic Chair is a sensible guess, but a guess must never become an order on its own | No suggestions; accept the AI's guess automatically | Floyd |
 | 2026-11-16 | Duplicate check **warns** on the approval card (same customer + same amount in 24 h), never blocks. **Team may still change it.** | Repeat orders are normal; a human decides | Block duplicates | Floyd |
 | 2026-11-16 | Own company and internal users are never matched as customers | A request could otherwise be addressed to "My Company" | Only customers with sales history (would hide new customers) | Floyd |
 | 2026-11-16 | Ollama keep-alive default 1 h (24 h on the demo PC) | Cold start ~40–45 s vs 2–3 s warm (experiment 12) | Per-PC setting only | Floyd |
