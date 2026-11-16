@@ -33,5 +33,4 @@ Archive of the previous group's documents, renamed to clean file names but **con
 - Every pull request adds an entry to [CHANGELOG.md](our-work/changes/CHANGELOG.md).
 - Every experiment gets an entry in [EXPERIMENT-LOG.md](our-work/experiments/EXPERIMENT-LOG.md); every test run a row in [TEST-RESULTS.md](our-work/tests/TEST-RESULTS.md) (`Setup/run_tests.py` writes the report).
 - Reports for people (team, supervisor) are a single interactive HTML page (D3, Three.js, Motion) built from the Markdown records; numbers only from those records.
-- Supervisor meetings: notes in [`planning/meetings/`](our-work/planning/meetings/).
 - Old documents that are no longer current: add a dated "snapshot" note at the top instead of deleting them.
