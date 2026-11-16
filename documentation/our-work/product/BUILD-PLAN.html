@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build plan – Odoo chat assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a working engineering document. Left-aligned column, ledger-style tables,
+   one cobalt accent for "the path a request takes", amber only for "draft" things. */
+:root {
+  --paper: #f3f5f8;
+  --panel: #ffffff;
+  --ink: #14213d;
+  --muted: #586378;
+  --line: #d8dee8;
+  --accent: #1f55e0;
+  --accent-soft: #e3eafc;
+  --draft: #a86b00;
+  --draft-soft: #fbf0d9;
+  --ok: #17734a;
+  --ok-soft: #dcf1e6;
+  --warn: #9a5b00;
+  --bad: #b42318;
+  --bad-soft: #fbe3e1;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d121b; --panel: #151c28; --ink: #e5eaf2; --muted: #9aa6b8; --line: #263145;
+    --accent: #7ea2ff; --accent-soft: #1b2847; --draft: #f0b54a; --draft-soft: #33270f;
+    --ok: #56c98f; --ok-soft: #12301f; --warn: #f0b54a; --bad: #ff8a80; --bad-soft: #3a1714;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d121b; --panel: #151c28; --ink: #e5eaf2; --muted: #9aa6b8; --line: #263145;
+  --accent: #7ea2ff; --accent-soft: #1b2847; --draft: #f0b54a; --draft-soft: #33270f;
+  --ok: #56c98f; --ok-soft: #12301f; --warn: #f0b54a; --bad: #ff8a80; --bad-soft: #3a1714;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--accent-soft); padding: .08em .35em; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 4.5vw, 3rem); letter-spacing: -.01em; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.12rem; }
+p { margin: 0; max-width: 68ch; }
+.topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; margin-right: auto; display: flex; gap: 10px; align-items: center; }
+.brand-mark { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: var(--panel); display: grid; place-items: center; font-size: .8rem; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs a { text-decoration: none; color: var(--muted); padding: 6px 12px; border-radius: 999px; font-weight: 500; font-size: .92rem; }
+.tabs a[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.tabs a:hover:not([aria-current]) { background: var(--accent-soft); color: var(--ink); }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 80px; display: grid; gap: 56px; }
+.hero { display: grid; gap: 16px; padding-top: 12px; }
+.eyebrow { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); letter-spacing: .02em; }
+.lead { font-size: 1.12rem; color: var(--muted); max-width: 70ch; }
+section { display: grid; gap: 18px; scroll-margin-top: 70px; }
+.section-head { display: grid; gap: 6px; }
+.section-head .num { font-family: var(--font-mono); color: var(--accent); font-size: .85rem; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.fact { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 2px; }
+.fact b { font-family: var(--font-display); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.fact span { color: var(--muted); font-size: .9rem; line-height: 1.35; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; background: color-mix(in srgb, var(--paper) 60%, var(--panel)); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.done { background: var(--ok-soft); color: var(--ok); }
+.pill.partial { background: var(--draft-soft); color: var(--draft); }
+.pill.open { background: var(--accent-soft); color: var(--accent); }
+.pill.out { background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+button, .chip { font: inherit; cursor: pointer; }
+.chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 5px 12px; border-radius: 999px; font-size: .88rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip:hover { border-color: var(--accent); }
+.btn { border: 0; background: var(--accent); color: var(--panel); padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+.btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn:disabled { opacity: .45; cursor: default; }
+.note { font-size: .88rem; color: var(--muted); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+figure { margin: 0; display: grid; gap: 10px; }
+figcaption { font-size: .88rem; color: var(--muted); max-width: 75ch; }
+svg.diagram { width: 100%; height: auto; color: var(--ink); font-family: var(--font-body); }
+.diagram-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.diagram-wrap svg { min-width: 640px; }
+.callout { border-left: 4px solid var(--draft); background: var(--draft-soft); padding: 12px 16px; border-radius: 0 var(--radius) var(--radius) 0; }
+.callout p { max-width: none; }
+ul.clean { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+.chart text { fill: var(--muted); font-family: var(--font-body); font-size: 12px; }
+.chart .grid line { stroke: var(--line); }
+.chart .domain { stroke: var(--line); }
+.chart .tick line { stroke: var(--line); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+.loop { position: relative; padding: 22px 18px; }
+.loop-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; position: relative; }
+@media (max-width: 760px) { .loop-row { grid-template-columns: 1fr 1fr; } }
+.loop-step { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--paper); display: grid; gap: 4px; position: relative; }
+.loop-step b { font-family: var(--font-display); font-size: 1.02rem; }
+.loop-step span { font-size: .85rem; color: var(--muted); }
+.loop-step.gate { border: 2px solid var(--draft); background: var(--draft-soft); }
+.loop-step:not(:last-child)::after { content: "→"; position: absolute; right: -22px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 1.1rem; }
+@media (max-width: 760px) { .loop-step::after { display: none; } }
+.loop-fail { margin-top: 10px; font-size: .85rem; color: var(--bad); }
+.loop-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); top: 10px; left: 0; display: none; }
+.timeline svg, .runs svg { width: 100%; height: auto; overflow: visible; }
+.timeline .ms circle { fill: var(--accent); }
+.timeline .ms.open circle { fill: var(--panel); stroke: var(--accent); stroke-width: 2; }
+.timeline .ms text { fill: var(--ink); font-size: 12px; }
+.timeline .ms text.d { fill: var(--muted); font-size: 11px; }
+.runs .bar { fill: var(--accent); }
+.runs .bar.first { fill: var(--muted); opacity: .55; }
+.runs .val { fill: var(--ink); font-weight: 600; font-size: 12px; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filters .label { font-size: .85rem; color: var(--muted); }
+.phases { display: grid; gap: 14px; }
+.phase { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden; }
+.phase .rail { display: grid; justify-items: center; align-content: start; padding-top: 18px; background: color-mix(in srgb, var(--paper) 55%, var(--panel)); border-right: 1px solid var(--line); }
+.phase .rail b { font-family: var(--font-mono); font-size: .85rem; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line); background: var(--panel); }
+.phase.done .rail b { background: var(--ok); border-color: var(--ok); color: var(--panel); }
+.phase.active .rail b { border-color: var(--draft); color: var(--draft); }
+.phase .content { padding: 16px 18px; display: grid; gap: 10px; }
+.phase .top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.phase .top h3 { font-size: 1.15rem; margin-right: auto; }
+.phase .meta { font-size: .82rem; color: var(--muted); font-family: var(--font-mono); }
+.phase .bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.phase .bar i { display: block; height: 100%; background: var(--ok); border-radius: 99px; }
+.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.tasks li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: start; font-size: .93rem; }
+.tasks .box { width: 17px; height: 17px; border-radius: 4px; border: 1.5px solid var(--muted); margin-top: 3px; display: grid; place-items: center; font-size: .7rem; color: var(--panel); }
+.tasks li.ok .box { background: var(--ok); border-color: var(--ok); }
+.tasks li.ok .t { color: var(--muted); }
+.tasks .who { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+.gate { font-size: .88rem; border-left: 3px solid var(--draft); padding: 6px 10px; background: var(--draft-soft); border-radius: 0 8px 8px 0; }
+.gate b { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .06em; color: var(--draft); margin-right: 6px; }
+.evidence { font-size: .85rem; color: var(--muted); }
+.phase[hidden] { display: none; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">AI</span>AI-Integrated ERP · Odoo chat assistant</div>
+    <nav class="tabs" aria-label="Project documents">
+      <a href="PRD.html">PRD</a>
+      <a href="BLUEPRINT.html">Blueprint</a>
+      <a href="BUILD-PLAN.html" aria-current="page">Build plan</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="hero">
+  <span class="eyebrow">BUILD PLAN · v1.0 · 16 Nov 2026</span>
+  <h1>From hardened V3.1 to a validated product</h1>
+  <p class="lead">Phases with checkboxes. Each phase ends with a test gate; only when the gate passes is the work committed and pushed, so <code>main</code> always works. What we are building: <a href="PRD.html">PRD</a>. How: <a href="BLUEPRINT.html">Blueprint</a>.</p>
+  <div class="facts" id="facts"></div>
+</div>
+
+<section id="workflow" aria-labelledby="h-wf">
+  <div class="section-head"><span class="num">01 · How we work</span><h2 id="h-wf">Every phase ends at a gate</h2>
+    <p>Agreed 16 Nov 2026 (<a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/decisions/DECISIONS.md">DECISIONS.md</a>). Changes to the PRD or this plan are logged there too, with the reason.</p></div>
+  <div class="panel loop" id="loop">
+    <div class="loop-row">
+      <div class="loop-step"><b>Build</b><span>the tasks of one phase, on a branch</span></div>
+      <div class="loop-step gate"><b>Test gate</b><span><code>pytest Application/V3.1/tests</code>, plus <code>npm run lint && npm run build</code> if the UI changed</span></div>
+      <div class="loop-step"><b>Commit &amp; push</b><span>only when the gate passes; PR to <code>main</code></span></div>
+      <div class="loop-step"><b>Teammates pull</b><span>before they start, so everyone builds on working code</span></div>
+    </div>
+    <p class="loop-fail">Gate fails → fix in the same phase. Nothing broken goes to GitHub.</p>
+    <span class="loop-dot" id="loop-dot" aria-hidden="true"></span>
+  </div>
+</section>
+
+<section id="progress" aria-labelledby="h-prog">
+  <div class="section-head"><span class="num">02 · So far</span><h2 id="h-prog">What happened, and the test count at each gate</h2>
+    <p>Dates from the <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/changes/CHANGELOG.md">changelog</a>; test counts from the recorded runs in <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/tests/TEST-RESULTS.md">TEST-RESULTS.md</a>.</p></div>
+  <div class="grid-2">
+    <div class="panel timeline"><h3>Milestones, 9–16 Nov 2026</h3><svg id="timeline" viewBox="0 0 520 250" role="img" aria-label="Milestones from the handover on 9 November to PR 8 on 16 November"></svg><ul class="clean note" id="timeline-list"></ul></div>
+    <div class="panel runs"><h3>Automated tests passing, per recorded run</h3><svg id="runs" viewBox="0 0 520 250" role="img" aria-label="Tests passing per run: 40, 41, 41, 50, 53, 60, 64"></svg><p class="note">Every run: 0 failed. 40 → 64 tests as features were added. The first run is the hardened backend before the move to V3.1.</p></div>
+  </div>
+</section>
+
+<section id="phases-sec" aria-labelledby="h-ph">
+  <div class="section-head"><span class="num">03 · Phases</span><h2 id="h-ph">The plan</h2>
+    <p>Done phases stay listed as evidence. Future phases have no dates yet: they are in order, and the freeze is 2 weeks before the final presentation. Names on future tasks are proposals based on the roles; change them freely.</p></div>
+  <div class="filters" id="filters"><span class="label">Show work for:</span></div>
+  <div class="phases" id="phases"></div>
+</section>
+</main>
+<footer>
+  Build plan v1.0 · 16 Nov 2026 · To update: edit the <code>plan</code> data block at the bottom of this file (set <code>"done": true</code> on a task, or add a phase), then log the change in <code>DECISIONS.md</code> and the <code>CHANGELOG.md</code> entry of your PR.
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+
+<script>
+// Shared helpers. Every library is optional: the page reads fine without D3, Three.js or Motion.
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function safely(label, fn) { try { fn(); } catch (e) { console.warn(label + " skipped:", e); } }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function revealOnScroll(selector) {
+  if (REDUCED || !window.Motion) return;
+  const { animate, inView, stagger } = Motion;
+  document.querySelectorAll(selector).forEach(group => {
+    inView(group, () => {
+      const items = group.children.length ? group.children : [group];
+      animate(items, { transform: ["translateY(10px)", "none"] }, { duration: .45, delay: stagger(.05), easing: "ease-out" });
+    }, { amount: .15 });
+  });
+}
+</script>
+<script>
+// ---- THE PLAN: edit this block to update the page ----
+const PLAN = [
+  { n: 1, title: "Handover and Odoo setup", when: "9–12 Nov", owners: ["Floyd"], goal: "Understand the previous group's work and get a reproducible Odoo 20 + AI setup.",
+    tasks: [["Handover investigation report", 1, "Floyd"], ["Odoo 20 Community + PostgreSQL ≥ 16 on Windows", 1, "Floyd"], ["Seed data and limited ai_agent user (Setup/seed_odoo.py)", 1, "Floyd"], ["Health check (Setup/check_setup.py) and quickstart", 1, "Floyd"], ["First real-AI measurements (experiments 1–2)", 1, "Floyd"]],
+    gate: "check_setup.py passes on the team PC", evidence: "HANDOVER-REPORT.md, SESSION-OVERVIEW.md, experiments 1–2" },
+  { n: 2, title: "Backend hardening", when: "PR #1 · 12 Nov", owners: ["Floyd"], goal: "Make the previous group's V3 safe and stable without changing what it does.",
+    tasks: [["Odoo connection per thread, with timeouts", 1, "Floyd"], ["Read and create allow-lists; drafts only", 1, "Floyd"], ["Prices always from Odoo", 1, "Floyd"], ["Approvals expire; clean-up when the browser closes", 1, "Floyd"], ["Audit log", 1, "Floyd"], ["Pinned packages; localhost → 127.0.0.1", 1, "Floyd"]],
+    gate: "40–41 automated tests pass on Python 3.11–3.13, Windows and Linux", evidence: "PR #1; experiments 3–5: 28 → 0 failed parallel requests" },
+  { n: 3, title: "Versions and documentation", when: "PR #2, #3 · 12 Nov", owners: ["Floyd"], goal: "Keep V3 for comparison, give our version its own folder, organise the docs.",
+    tasks: [["V3 restored byte-for-byte; our work becomes V3.1", 1, "Floyd"], ["documentation/ split into previous-group and our-work", 1, "Floyd"], ["Setup/run_tests.py saves every run as evidence", 1, "Floyd"]],
+    gate: "41 tests pass from Application/V3.1", evidence: "PR #2, PR #3" },
+  { n: 4, title: "Structured AI actions and chat", when: "14 Nov", owners: ["Marija"], goal: "One structured action per message instead of free-form Odoo calls.",
+    tasks: [["5 tools: create_invoice, create_sales_order, lookup_records, ask_clarification, refuse_request", 1, "Marija"], ["One AI call per message; replies written by the app", 1, "Marija"], ["Approval card with customer and lines", 1, "Marija"], ["Timing records and extraction replay script", 1, "Marija"]],
+    gate: "50 tests pass (together with phase 5's first fix)", evidence: "Commit 9c8aae2; weekly report 14 Nov" },
+  { n: 5, title: "Name matching", when: "PR #5 · 16 Nov", owners: ["Floyd"], goal: "Ask instead of guessing when a name matches several records.",
+    tasks: [["Exact name wins; one partial match is used; several → numbered list", 1, "Floyd"], ["Pick by number or name without asking the AI again", 1, "Floyd"], ["12 new tests", 1, "Floyd"]],
+    gate: "53 tests pass", evidence: "PR #5" },
+  { n: 6, title: "Approval card with Odoo prices", when: "PR #6 · 16 Nov", owners: ["Floyd"], goal: "The person approving sees exactly what will be created, at real prices.",
+    tasks: [["Lines with Odoo price and subtotal; total excl. VAT", 1, "Floyd"], ["Duplicate warning (same customer and amount, 24 h)", 1, "Floyd"], ["Own company and internal users never match as customer", 1, "Floyd"], ["Accept the shapes llama3.1 really sends", 1, "Floyd"], ["Keep-alive 1 h by default", 1, "Floyd"], ["Chat card shows prices and warnings", 1, "Floyd"]],
+    gate: "60 tests pass; chat UI build and lint clean", evidence: "PR #6; experiment 12: 40–45 s → 2–3 s" },
+  { n: 7, title: "Unknown products, clearer messages", when: "PR #7 · 16 Nov", owners: ["Floyd"], goal: "Help when a product name matches nothing, without ever guessing silently.",
+    tasks: [["AI suggests one real product; the user confirms", 1, "Floyd"], ["Plain-language not-found message", 1, "Floyd"], ["Search limit clamped to 1–50", 1, "Floyd"]],
+    gate: "64 tests pass", evidence: "PR #7" },
+  { n: 8, title: "Same sentence, same action", when: "PR #8 · open", owners: ["Floyd", "Marija"], goal: "Stop the same sentence from giving different actions (experiment 13).",
+    tasks: [["AI call at temperature 0", 1, "Floyd"], ["Prompt rule: sell/order → sales order, invoice → invoice, show/find → lookup", 1, "Floyd"], ["CLAUDE.md, PRD, blueprint and this build plan", 1, "Floyd"], ["Re-test \"sell 4 premium chairs to Luther\" 5× with the real llama3.1", 0, "Floyd"], ["Merge PR #8", 0, "Floyd"]],
+    gate: "64 tests pass, and the same sentence gives the same action 5 out of 5 times", evidence: "PR #8; experiment 13" },
+  { n: 9, title: "Real-AI baseline", when: "next", owners: ["Anastasia", "Marija", "Floyd"], goal: "Know how good the real model is, with numbers.",
+    tasks: [["50-prompt test set with expected action and outcome", 0, "Anastasia"], ["Replay with llama3.1 on Floyd's PC, results in the experiment log", 0, "Marija"], ["Same with qwen3:8b; compare % right action and seconds", 0, "Marija"], ["Full Windows run with Setup/run_tests.py", 0, "Floyd"], ["Agree a speed target", 0, "Team"]],
+    gate: "Results in EXPERIMENT-LOG.md and TEST-RESULTS.md", evidence: "–" },
+  { n: 10, title: "Entrepreneur validation", when: "next", owners: ["Tijn", "Team"], goal: "Find out whether business owners want this before building more.",
+    tasks: [["Demo script with three scenarios (clean invoice, ambiguous customer, refused request)", 0, "Tijn"], ["List of entrepreneurs to approach, in person and via LinkedIn", 0, "Tijn"], ["Hold the demos", 0, "Team"], ["Feedback in the experiment log", 0, "Anastasia"], ["PRD changes logged in DECISIONS.md", 0, "Tijn"]],
+    gate: "Findings written down; PRD confirmed or changed", evidence: "–" },
+  { n: 11, title: "Open decisions", when: "next", owners: ["Floyd", "Marija", "Tijn"], goal: "Settle what the AI may send and what comes after v1.",
+    tasks: [["Data contract D1–D12 ticked", 0, "Floyd"], ["Invoice from an existing sales order: yes or no", 0, "Team"], ["New customers via the chat (D5)", 0, "Tijn"], ["When to start V4 on the data contract", 0, "Team"]],
+    gate: "DECISIONS.md and DATA-CONTRACT.md updated", evidence: "–" },
+  { n: 12, title: "Chat polish", when: "next", owners: ["Marija", "Floyd"], goal: "Clear messages for the cases the real AI showed.",
+    tasks: [["Questions shown once, without the \"I couldn't complete the request:\" prefix", 0, "Marija"], ["Show Odoo's record name (e.g. S00003) after creating", 0, "Floyd"]],
+    gate: "Tests pass; npm run lint && npm run build; manual checklist rows 5–7", evidence: "–" },
+  { n: 13, title: "Housekeeping and security", when: "next", owners: ["Floyd", "Tijn"], goal: "Close the loose ends from the handover.",
+    tasks: [["Previous group revokes the leaked Odoo password and Teams webhook", 0, "Tijn"], ["Protect main: every change via a reviewed PR", 0, "Floyd"], ["Delete merged branches", 0, "Floyd"], ["Supervisor can read the repository", 0, "Floyd"]],
+    gate: "Checked off in this plan", evidence: "–" },
+  { n: 14, title: "Freeze and presentation", when: "2 weeks before the presentation", owners: ["Team"], goal: "A demo that works on the day.",
+    tasks: [["Feature freeze; tag a release", 0, "Team"], ["Setup from scratch on a clean machine", 0, "Anastasia"], ["Backup demo video", 0, "Anastasia"], ["Three timed rehearsals", 0, "Team"]],
+    gate: "Clean-machine setup works; video recorded", evidence: "–" },
+];
+// ---- end of the plan ----
+
+const MILESTONES = [
+  { d: "2026-11-09", t: "Handover report" }, { d: "2026-11-10", t: "Odoo 20 set up; first real-AI test" },
+  { d: "2026-11-12", t: "PR #1–#3: hardening, V3.1, docs" }, { d: "2026-11-14", t: "Structured AI actions and chat" },
+  { d: "2026-11-16", t: "PR #5–#7 merged; PR #8 open", open: true },
+];
+const RUNS = [
+  { k: "12 Nov · b17d27a", v: 40 }, { k: "12 Nov · 69e5f4f", v: 41 }, { k: "12 Nov · 4751804", v: 41 },
+  { k: "16 Nov · 9c8aae2+", v: 50 }, { k: "16 Nov · ef7b9f1+", v: 53 }, { k: "16 Nov · f6bb128+", v: 60 }, { k: "16 Nov · 1a6a3bb+", v: 64 },
+];
+
+const isDone = p => p.tasks.every(t => t[1]);
+const allTasks = PLAN.flatMap(p => p.tasks);
+const next = PLAN.find(p => !isDone(p));
+document.getElementById("facts").innerHTML = [
+  [`${PLAN.filter(isDone).length}/${PLAN.length}`, "phases done"],
+  [`${allTasks.filter(t => t[1]).length}/${allTasks.length}`, "tasks done"],
+  [String(RUNS[RUNS.length - 1].v), "automated tests passing (last recorded run)"],
+  [`#${next.n}`, `now: ${next.title}`],
+].map(([b, s]) => `<div class="fact"><b>${esc(b)}</b><span>${esc(s)}</span></div>`).join("");
+
+const people = ["All", "Floyd", "Marija", "Tijn", "Anastasia", "Team"];
+let who = "All";
+const filters = document.getElementById("filters");
+filters.insertAdjacentHTML("beforeend", people.map(p => `<button type="button" class="chip" data-p="${p}" aria-pressed="${p === who}">${p}</button>`).join(""));
+filters.addEventListener("click", e => { const b = e.target.closest("button"); if (b) { who = b.dataset.p; render(); } });
+function render() {
+  filters.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === who));
+  document.getElementById("phases").innerHTML = PLAN.map(p => {
+    const done = p.tasks.filter(t => t[1]).length, all = p.tasks.length;
+    const state = done === all ? "done" : p === next ? "active" : "todo";
+    const pill = state === "done" ? `<span class="pill done">Done</span>` : state === "active" ? `<span class="pill partial">In progress</span>` : `<span class="pill open">To do</span>`;
+    const show = who === "All" || p.tasks.some(t => t[2] === who) || p.owners.includes(who);
+    return `<article class="panel phase ${state}" ${show ? "" : "hidden"} aria-labelledby="ph-${p.n}">
+      <div class="rail"><b>${state === "done" ? "✓" : p.n}</b></div>
+      <div class="content">
+        <div class="top"><h3 id="ph-${p.n}">${p.n}. ${esc(p.title)}</h3>${pill}<span class="meta">${esc(p.when)} · ${esc(p.owners.join(", "))}</span></div>
+        <p class="note">${esc(p.goal)}</p>
+        <div class="bar" role="img" aria-label="${done} of ${all} tasks done"><i style="width:${(done / all * 100).toFixed(0)}%"></i></div>
+        <ul class="tasks">${p.tasks.map(t => `<li class="${t[1] ? "ok" : ""}" ${who !== "All" && t[2] !== who ? 'style="opacity:.45"' : ""}><span class="box" aria-hidden="true">${t[1] ? "✓" : ""}</span><span class="t">${t[1] ? '<span class="visually-hidden">Done: </span>' : ""}${esc(t[0])}</span><span class="who">${esc(t[2])}</span></li>`).join("")}</ul>
+        <div class="gate"><b>GATE</b>${esc(p.gate)}</div>
+        <div class="evidence">Evidence: ${esc(p.evidence)}</div>
+      </div></article>`;
+  }).join("");
+}
+render();
+
+// ---- 01: the workflow loop (Motion) ----
+safely("loop", () => {
+  if (REDUCED || !window.Motion) return;
+  const dot = document.getElementById("loop-dot"), steps = [...document.querySelectorAll(".loop-step")];
+  const row = document.querySelector(".loop-row").getBoundingClientRect();
+  if (window.innerWidth < 760) return;
+  const xs = steps.map(s => { const r = s.getBoundingClientRect(); return r.left - row.left + r.width / 2 - 7 + 18; });
+  dot.style.display = "block";
+  Motion.animate(dot, { transform: xs.map(x => `translateX(${x}px)`) }, { duration: 6, repeat: Infinity, easing: "ease-in-out" });
+  steps.forEach((s, i) => Motion.animate(s, { transform: ["none", "translateY(-3px)", "none"] }, { duration: 6, delay: i * 1.5, repeat: Infinity, repeatDelay: 0 }));
+});
+
+// ---- 02: milestones and test runs (D3) ----
+safely("timeline", () => {
+  document.getElementById("timeline-list").innerHTML = MILESTONES.map(m => `<li><strong>${new Date(m.d).getDate()} Nov</strong>: ${esc(m.t)}</li>`).join("");
+  if (!window.d3) return;
+  document.getElementById("timeline-list").style.display = "none";
+  const svg = d3.select("#timeline"), W = 520, m = { l: 24, r: 24 };
+  const x = d3.scaleTime().domain([new Date("2026-11-08T12:00"), new Date("2026-11-16T12:00")]).range([m.l, W - m.r]);
+  svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", 70).attr("y2", 70).attr("stroke", css("--line")).attr("stroke-width", 2);
+  svg.append("g").attr("class", "chart").attr("transform", "translate(0,70)").call(d3.axisBottom(x).ticks(d3.timeDay.every(1)).tickFormat(d3.timeFormat("%-d")).tickSize(6)).call(g => g.select(".domain").remove());
+  const ms = svg.selectAll(".ms").data(MILESTONES).join("g").attr("class", d => "ms" + (d.open ? " open" : ""))
+    .attr("transform", d => `translate(${x(new Date(d.d + "T12:00"))},70)`);
+  ms.append("circle").attr("r", 7);
+  ms.append("line").attr("y1", 10).attr("y2", (d, i) => 44 + i * 30).attr("stroke", css("--line"));
+  ms.append("text").attr("y", (d, i) => 58 + i * 30).attr("text-anchor", (d, i) => i > 2 ? "end" : "start").attr("x", (d, i) => i > 2 ? 8 : -8).text(d => d.t);
+  svg.append("text").attr("x", m.l).attr("y", 40).style("fill", css("--muted")).style("font-size", "12px").text("November 2026");
+  if (!REDUCED) ms.attr("opacity", 0).transition().delay((d, i) => 150 * i).duration(400).attr("opacity", 1);
+});
+safely("runs", () => {
+  if (!window.d3) return;
+  const svg = d3.select("#runs"), W = 520, H = 250, m = { l: 34, r: 8, t: 16, b: 64 };
+  const x = d3.scaleBand().domain(RUNS.map(r => r.k)).range([m.l, W - m.r]).padding(.28);
+  const y = d3.scaleLinear().domain([0, 70]).range([H - m.b, m.t]);
+  svg.append("g").attr("class", "chart grid").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(7).tickSize(-(W - m.l - m.r))).call(g => g.select(".domain").remove());
+  svg.append("g").attr("class", "chart").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickSize(0)).call(g => g.select(".domain").remove())
+    .selectAll("text").attr("transform", "rotate(-35)").attr("text-anchor", "end").attr("dx", "-.4em").attr("dy", ".6em");
+  const bars = svg.selectAll(".bar").data(RUNS).join("rect").attr("class", (d, i) => "bar" + (i === 0 ? " first" : ""))
+    .attr("x", d => x(d.k)).attr("width", x.bandwidth()).attr("rx", 3).attr("y", d => y(d.v)).attr("height", d => y(0) - y(d.v));
+  const vals = svg.selectAll(".val").data(RUNS).join("text").attr("class", "val").attr("text-anchor", "middle")
+    .attr("x", d => x(d.k) + x.bandwidth() / 2).attr("y", d => y(d.v) - 6).text(d => d.v);
+  if (!REDUCED) {
+    const run = () => { bars.attr("y", y(0)).attr("height", 0).transition().duration(800).delay((d, i) => i * 90).attr("y", d => y(d.v)).attr("height", d => y(0) - y(d.v)); };
+    if (window.Motion) Motion.inView("#runs", run, { amount: .5 }); else run();
+  }
+});
+revealOnScroll("#facts");
+</script>
+</body>
+</html>
