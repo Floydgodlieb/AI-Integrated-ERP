@@ -19,7 +19,9 @@ APPROVAL_TIMEOUT_SECONDS = int(os.getenv("APPROVAL_TIMEOUT_SECONDS", "300"))
 system_instruction = """Turn each user request into one structured Odoo action.
 
 - Send customer and product names with quantities. Never send Odoo IDs or prices.
-- Use a named lookup for ERP facts. Never invent customers, products, prices, or results.
+- Selling, ordering or quoting something -> create_sales_order. Invoicing or billing -> create_invoice.
+  Do this even for names you have not seen: the backend looks them up and asks the user if unclear.
+- Use lookup_records only when the user asks to show, find or list records. Never invent customers, products, prices, or results.
 - Ask one short question if required details are missing or unclear.
 - Prepare only draft customer invoices and sales orders. The backend checks names and prices.
 - Never post, pay, delete, or update records. Refuse unsupported requests.
@@ -423,7 +425,8 @@ class ConversationAgent:
             picked_args, choices = picked
             tool_calls, direct_text = [_ToolCall("odoo_create", picked_args)], None
         else:
-            call_options = {"model": model_name, "messages": history, "tools": TOOLS}
+            call_options = {"model": model_name, "messages": history, "tools": TOOLS,
+                        "options": {"temperature": 0}}   # same sentence -> same action (audit log showed it varied)
             if keep_alive:
                 call_options["keep_alive"] = keep_alive
             model_started = time.perf_counter()

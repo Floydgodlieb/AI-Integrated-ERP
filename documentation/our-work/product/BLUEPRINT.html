@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint – Odoo chat assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a working engineering document. Left-aligned column, ledger-style tables,
+   one cobalt accent for "the path a request takes", amber only for "draft" things. */
+:root {
+  --paper: #f3f5f8;
+  --panel: #ffffff;
+  --ink: #14213d;
+  --muted: #586378;
+  --line: #d8dee8;
+  --accent: #1f55e0;
+  --accent-soft: #e3eafc;
+  --draft: #a86b00;
+  --draft-soft: #fbf0d9;
+  --ok: #17734a;
+  --ok-soft: #dcf1e6;
+  --warn: #9a5b00;
+  --bad: #b42318;
+  --bad-soft: #fbe3e1;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d121b; --panel: #151c28; --ink: #e5eaf2; --muted: #9aa6b8; --line: #263145;
+    --accent: #7ea2ff; --accent-soft: #1b2847; --draft: #f0b54a; --draft-soft: #33270f;
+    --ok: #56c98f; --ok-soft: #12301f; --warn: #f0b54a; --bad: #ff8a80; --bad-soft: #3a1714;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d121b; --panel: #151c28; --ink: #e5eaf2; --muted: #9aa6b8; --line: #263145;
+  --accent: #7ea2ff; --accent-soft: #1b2847; --draft: #f0b54a; --draft-soft: #33270f;
+  --ok: #56c98f; --ok-soft: #12301f; --warn: #f0b54a; --bad: #ff8a80; --bad-soft: #3a1714;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--accent-soft); padding: .08em .35em; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 4.5vw, 3rem); letter-spacing: -.01em; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.12rem; }
+p { margin: 0; max-width: 68ch; }
+.topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; margin-right: auto; display: flex; gap: 10px; align-items: center; }
+.brand-mark { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: var(--panel); display: grid; place-items: center; font-size: .8rem; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs a { text-decoration: none; color: var(--muted); padding: 6px 12px; border-radius: 999px; font-weight: 500; font-size: .92rem; }
+.tabs a[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.tabs a:hover:not([aria-current]) { background: var(--accent-soft); color: var(--ink); }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 80px; display: grid; gap: 56px; }
+.hero { display: grid; gap: 16px; padding-top: 12px; }
+.eyebrow { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); letter-spacing: .02em; }
+.lead { font-size: 1.12rem; color: var(--muted); max-width: 70ch; }
+section { display: grid; gap: 18px; scroll-margin-top: 70px; }
+.section-head { display: grid; gap: 6px; }
+.section-head .num { font-family: var(--font-mono); color: var(--accent); font-size: .85rem; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.fact { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 2px; }
+.fact b { font-family: var(--font-display); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.fact span { color: var(--muted); font-size: .9rem; line-height: 1.35; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; background: color-mix(in srgb, var(--paper) 60%, var(--panel)); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.done { background: var(--ok-soft); color: var(--ok); }
+.pill.partial { background: var(--draft-soft); color: var(--draft); }
+.pill.open { background: var(--accent-soft); color: var(--accent); }
+.pill.out { background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+button, .chip { font: inherit; cursor: pointer; }
+.chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 5px 12px; border-radius: 999px; font-size: .88rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip:hover { border-color: var(--accent); }
+.btn { border: 0; background: var(--accent); color: var(--panel); padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+.btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn:disabled { opacity: .45; cursor: default; }
+.note { font-size: .88rem; color: var(--muted); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+figure { margin: 0; display: grid; gap: 10px; }
+figcaption { font-size: .88rem; color: var(--muted); max-width: 75ch; }
+svg.diagram { width: 100%; height: auto; color: var(--ink); font-family: var(--font-body); }
+.diagram-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.diagram-wrap svg { min-width: 640px; }
+.callout { border-left: 4px solid var(--draft); background: var(--draft-soft); padding: 12px 16px; border-radius: 0 var(--radius) var(--radius) 0; }
+.callout p { max-width: none; }
+ul.clean { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+.chart text { fill: var(--muted); font-family: var(--font-body); font-size: 12px; }
+.chart .grid line { stroke: var(--line); }
+.chart .domain { stroke: var(--line); }
+.chart .tick line { stroke: var(--line); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+.stack-demo { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr); gap: 0; padding: 0; overflow: hidden; }
+@media (max-width: 860px) { .stack-demo { grid-template-columns: 1fr; } }
+.stack-canvas { position: relative; min-height: 440px; background: radial-gradient(120% 90% at 30% 20%, var(--accent-soft), var(--panel) 70%); border-right: 1px solid var(--line); }
+.stack-canvas canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
+.stack-canvas canvas:active { cursor: grabbing; }
+.stack-fallback { position: absolute; inset: 0; display: none; place-items: center; padding: 24px; color: var(--muted); text-align: center; }
+.stack-canvas.no-3d .stack-fallback { display: grid; }
+.stack-hint { position: absolute; left: 14px; bottom: 12px; font-size: .78rem; color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 3px 8px; border-radius: 6px; }
+.steps { padding: 18px; display: grid; gap: 12px; align-content: start; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; counter-reset: step; max-height: 330px; overflow-y: auto; }
+.steps li button { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: .9rem; line-height: 1.4; color: var(--muted); }
+.steps li button:hover { background: var(--accent-soft); }
+.steps li button:focus-visible { outline: 3px solid var(--accent); }
+.steps li button .n { font-family: var(--font-mono); font-size: .8rem; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); }
+.steps li[aria-current="step"] button { background: var(--accent-soft); color: var(--ink); }
+.steps li[aria-current="step"] .n { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.step-now { min-height: 4.5em; padding: 12px 14px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); font-size: .95rem; }
+.step-now .where { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); display: block; margin-bottom: 2px; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+svg.diagram .lbl { paint-order: stroke; stroke: var(--panel); stroke-width: 5px; stroke-linejoin: round; font-size: 12px; fill: var(--ink); }
+svg.diagram .lane { font-size: 12.5px; font-weight: 600; fill: var(--ink); }
+svg.diagram .sub { font-size: 11px; fill: var(--muted); }
+svg.diagram .life { stroke: var(--line); stroke-dasharray: 3 4; }
+svg.diagram .msg { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+svg.diagram .msg.ret { stroke-dasharray: 5 4; }
+svg.diagram .msg.hot { stroke: var(--accent); stroke-width: 2; }
+svg.diagram .box { fill: var(--panel); stroke: var(--line); stroke-width: 1.2; }
+svg.diagram .box.accent { stroke: var(--accent); stroke-width: 1.8; }
+svg.diagram .box.draft { stroke: var(--draft); stroke-width: 1.8; fill: var(--draft-soft); }
+svg.diagram .box.ok { stroke: var(--ok); fill: var(--ok-soft); }
+svg.diagram .box.bad { stroke: var(--bad); fill: var(--bad-soft); }
+svg.diagram .stepno { font-family: var(--font-mono); font-size: 10.5px; fill: var(--accent); }
+svg.diagram .node { transition: opacity .25s; }
+svg.diagram .node rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.3; transition: stroke .25s, fill .25s; }
+svg.diagram .node text { font-size: 12.5px; fill: var(--ink); }
+svg.diagram .node .s { font-size: 11px; fill: var(--muted); }
+svg.diagram .edge { stroke: var(--muted); stroke-width: 1.3; fill: none; transition: stroke .25s, stroke-width .25s; }
+svg.diagram .elbl { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 4px; }
+svg.diagram.tracing .node { opacity: .38; }
+svg.diagram.tracing .node.on { opacity: 1; }
+svg.diagram .node.on rect { stroke: var(--accent); stroke-width: 2.2; fill: var(--accent-soft); }
+svg.diagram .node.end.on rect { stroke: var(--ok); fill: var(--ok-soft); }
+svg.diagram .node.end.stop.on rect { stroke: var(--bad); fill: var(--bad-soft); }
+svg.diagram .node.end.ask.on rect { stroke: var(--draft); fill: var(--draft-soft); }
+svg.diagram .edge.on { stroke: var(--accent); stroke-width: 2.4; }
+.matcher { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .matcher { grid-template-columns: 1fr; } }
+.matcher-form { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; width: max-content; }
+.seg button { border: 0; background: var(--panel); color: var(--ink); padding: 6px 14px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.chat-msg { white-space: pre-wrap; font-size: .93rem; background: var(--paper); border: 1px solid var(--line); border-radius: 10px 10px 10px 2px; padding: 10px 12px; }
+.trace { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+.boundary { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; align-items: stretch; }
+.boundary .panel { display: grid; gap: 10px; align-content: start; }
+.boundary pre { margin: 0; font: .82rem/1.5 var(--font-mono); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.tag { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.chart-card { display: grid; gap: 8px; align-content: start; }
+.chart-card h3 { font-size: 1rem; }
+.chart-card svg { width: 100%; height: auto; overflow: visible; }
+.chart .bar-before { fill: var(--muted); opacity: .55; }
+.chart .bar-after { fill: var(--accent); }
+.chart .val { fill: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.owner { font-weight: 600; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">AI</span>AI-Integrated ERP · Odoo chat assistant</div>
+    <nav class="tabs" aria-label="Project documents">
+      <a href="PRD.html">PRD</a>
+      <a href="BLUEPRINT.html" aria-current="page">Blueprint</a>
+      <a href="BUILD-PLAN.html">Build plan</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="hero">
+  <span class="eyebrow">BLUEPRINT · Application/V3.1 · 16 Nov 2026</span>
+  <h1>How a sentence becomes a draft in Odoo</h1>
+  <p class="lead">The architecture of the current version: what each part does, where the safety rules sit, and what we measured. Everything here is taken from the code in <code>Application/V3.1</code> and from our test and experiment records.</p>
+  <div class="facts" id="facts">
+    <div class="fact"><b>1</b><span>AI call per message (a second only to suggest an unknown product)</span></div>
+    <div class="fact"><b>0</b><span>Odoo ids or prices taken from the AI</span></div>
+    <div class="fact"><b>2</b><span>things it can create: a draft quotation or a draft customer invoice</span></div>
+    <div class="fact"><b>4</b><span>Odoo models the AI may read</span></div>
+    <div class="fact"><b>300 s</b><span>before an unanswered approval expires</span></div>
+  </div>
+</div>
+
+<section id="stack" aria-labelledby="h-stack">
+  <div class="section-head"><span class="num">01 · The layers</span><h2 id="h-stack">Follow one request through the stack</h2>
+    <p>Example: <em>"Create an invoice for Pepsi with 3 Chair"</em> (seed data: Chair costs 50.00). Step through it, or press Play. Drag the 3D view to turn it.</p></div>
+  <div class="panel stack-demo">
+    <div class="stack-canvas" id="stack-canvas">
+      <div class="stack-fallback">The 3D view needs WebGL and an internet connection for Three.js. The steps on the right, and the sequence diagram below, show the same flow.</div>
+      <span class="stack-hint" aria-hidden="true">drag to rotate</span>
+    </div>
+    <div class="steps">
+      <div class="step-now" id="step-now" aria-live="polite"></div>
+      <div class="controls">
+        <button class="btn secondary" id="prev" type="button">Previous</button>
+        <button class="btn" id="play" type="button">Play</button>
+        <button class="btn secondary" id="next" type="button">Next</button>
+      </div>
+      <ol id="step-list"></ol>
+    </div>
+  </div>
+</section>
+
+<section id="sequence" aria-labelledby="h-seq">
+  <div class="section-head"><span class="num">02 · Sequence</span><h2 id="h-seq">Who talks to whom</h2>
+    <p>The same request as a sequence diagram. The AI is consulted once, at step 4; everything after that is code. The blue arrows are the approval round trip.</p></div>
+  <figure>
+    <div class="diagram-wrap">
+      <svg class="diagram" viewBox="0 0 1100 600" role="img" aria-label="Sequence diagram: the chat UI posts to the API, the agent calls the AI once, the resolver looks names up in Odoo, the user approves, and the Odoo client creates a draft.">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <g text-anchor="middle">
+          <text class="lane" x="50" y="26">You</text>
+          <text class="lane" x="180" y="26">Chat UI</text><text class="sub" x="180" y="42">Chat.jsx</text>
+          <text class="lane" x="310" y="26">API</text><text class="sub" x="310" y="42">main.py</text>
+          <text class="lane" x="450" y="26">Agent</text><text class="sub" x="450" y="42">agent.py</text>
+          <text class="lane" x="590" y="26">AI</text><text class="sub" x="590" y="42">Ollama llama3.1</text>
+          <text class="lane" x="730" y="26">Resolver</text><text class="sub" x="730" y="42">resolver.py</text>
+          <text class="lane" x="880" y="26">Odoo client</text><text class="sub" x="880" y="42">odoo_client.py</text>
+          <text class="lane" x="1030" y="26">Odoo 20</text><text class="sub" x="1030" y="42">XML-RPC</text>
+        </g>
+        <g class="life">
+          <line x1="50" y1="54" x2="50" y2="590"/><line x1="180" y1="54" x2="180" y2="590"/><line x1="310" y1="54" x2="310" y2="590"/>
+          <line x1="450" y1="54" x2="450" y2="590"/><line x1="590" y1="54" x2="590" y2="590"/><line x1="730" y1="54" x2="730" y2="590"/>
+          <line x1="880" y1="54" x2="880" y2="590"/><line x1="1030" y1="54" x2="1030" y2="590"/>
+        </g>
+        <g style="color: var(--muted)">
+          <line class="msg" x1="50" y1="84" x2="176" y2="84" marker-end="url(#arr)"/>
+          <line class="msg" x1="180" y1="120" x2="306" y2="120" marker-end="url(#arr)"/>
+          <line class="msg" x1="310" y1="156" x2="446" y2="156" marker-end="url(#arr)"/>
+          <line class="msg" x1="450" y1="192" x2="586" y2="192" marker-end="url(#arr)"/>
+          <line class="msg ret" x1="590" y1="228" x2="454" y2="228" marker-end="url(#arr)"/>
+          <line class="msg" x1="450" y1="264" x2="726" y2="264" marker-end="url(#arr)"/>
+          <line class="msg" x1="730" y1="300" x2="876" y2="300" marker-end="url(#arr)"/>
+          <line class="msg" x1="880" y1="336" x2="1026" y2="336" marker-end="url(#arr)"/>
+          <line class="msg ret" x1="730" y1="372" x2="454" y2="372" marker-end="url(#arr)"/>
+        </g>
+        <g style="color: var(--accent)">
+          <line class="msg hot" x1="450" y1="408" x2="184" y2="408" marker-end="url(#arr)"/>
+          <line class="msg hot" x1="50" y1="444" x2="176" y2="444" marker-end="url(#arr)"/>
+          <line class="msg hot" x1="180" y1="480" x2="446" y2="480" marker-end="url(#arr)"/>
+          <line class="msg hot" x1="450" y1="516" x2="876" y2="516" marker-end="url(#arr)"/>
+          <line class="msg hot" x1="880" y1="516" x2="1026" y2="516" marker-end="url(#arr)"/>
+          <line class="msg hot ret" x1="450" y1="552" x2="184" y2="552" marker-end="url(#arr)"/>
+        </g>
+        <g text-anchor="middle">
+          <text class="lbl" x="113" y="78">types the sentence</text>
+          <text class="lbl" x="245" y="114">POST /api/chat</text>
+          <text class="lbl" x="380" y="150">worker thread</text>
+          <text class="lbl" x="520" y="186">1 call · temp 0</text>
+          <text class="lbl" x="520" y="222">create_invoice</text>
+          <text class="lbl" x="590" y="258">_map_intent → names to resolve</text>
+          <text class="lbl" x="805" y="294">search_read</text>
+          <text class="lbl" x="955" y="330">read (allow-list)</text>
+          <text class="lbl" x="590" y="366">ids · list prices · warnings</text>
+          <text class="lbl" x="317" y="402">SSE confirmation_required</text>
+          <text class="lbl" x="113" y="438">Approve draft</text>
+          <text class="lbl" x="317" y="474">POST /api/confirm</text>
+          <text class="lbl" x="665" y="510">create draft (CREATE_RULES)</text>
+          <text class="lbl" x="955" y="510">account.move</text>
+          <text class="lbl" x="317" y="546">SSE token: "Created a draft invoice…"</text>
+        </g>
+        <g class="stepno" text-anchor="end">
+          <text x="44" y="88">1</text><text x="174" y="124">2</text><text x="304" y="160">3</text><text x="444" y="196">4</text>
+          <text x="610" y="232">5</text><text x="444" y="268">6</text><text x="724" y="304">7</text><text x="874" y="340">8</text>
+          <text x="750" y="376">9</text><text x="470" y="412">10</text><text x="44" y="448">11</text><text x="174" y="484">12</text>
+          <text x="444" y="520">13</text><text x="470" y="556">14</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Steps 4–5 are the only contact with the AI. Results and errors shown to the user are written by code (<code>_summarize_result</code>), never by a second AI call. If the user answers a "which one?" question with a number or a name, steps 4–5 are skipped (<code>_take_choice</code>).</figcaption>
+  </figure>
+</section>
+
+<section id="matching" aria-labelledby="h-match">
+  <div class="section-head"><span class="num">03 · Name matching</span><h2 id="h-match">How a name becomes an Odoo record</h2>
+    <p>The AI only sends names such as "Pepsi" or "chairs". <code>resolver.py</code> turns them into Odoo ids with these rules, in this order. Try a name: the tester below runs the same rules on the seed data from <code>Setup/seed_odoo.py</code>.</p></div>
+  <div class="matcher">
+    <figure>
+      <div class="diagram-wrap" style="padding: 10px">
+        <svg class="diagram" id="flow" style="min-width: 0" viewBox="0 0 760 540" role="img" aria-label="Flowchart: exact name, then partial name, then retry without a trailing s, then for products an AI suggestion; one match is used, several are asked, none is not found.">
+          <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+          <g style="color: var(--muted)">
+            <path class="edge" id="e-in" d="M150 64 V96" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-exact-no" d="M150 150 V184" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-partial-no" d="M150 238 V272" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-strip-no" d="M150 326 V360" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-suggest-no" d="M150 414 V470" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-exact-yes" d="M270 123 H410 V232" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-partial-yes" d="M270 211 H390 V232" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-strip-yes" d="M270 299 H390 V286" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-suggest-yes" d="M270 387 H476" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-one" d="M540 259 H600 V176" marker-end="url(#arr2)"/>
+            <path class="edge" id="e-many" d="M540 259 H600 V300" marker-end="url(#arr2)"/>
+          </g>
+          <g class="node" id="n-in"><rect x="60" y="14" width="180" height="50" rx="25"/><text x="150" y="36" text-anchor="middle">Name from the AI</text><text class="s" x="150" y="53" text-anchor="middle">e.g. "Jansen", "chairs"</text></g>
+          <g class="node" id="n-exact"><rect x="30" y="96" width="240" height="54" rx="8"/><text x="46" y="119">1 · Exact name, any case</text><text class="s" x="46" y="138">Odoo <tspan class="mono">=ilike</tspan></text></g>
+          <g class="node" id="n-partial"><rect x="30" y="184" width="240" height="54" rx="8"/><text x="46" y="207">2 · Name contains the text</text><text class="s" x="46" y="226">Odoo <tspan class="mono">ilike</tspan></text></g>
+          <g class="node" id="n-strip"><rect x="30" y="272" width="240" height="54" rx="8"/><text x="46" y="295">3 · Ends in "s"? Try without it</text><text class="s" x="46" y="314">chairs → chair (steps 1–2 again)</text></g>
+          <g class="node" id="n-suggest"><rect x="30" y="360" width="240" height="54" rx="8"/><text x="46" y="383">4 · Products only: AI suggestion</text><text class="s" x="46" y="402">must be one of the real product names</text></g>
+          <g class="node end stop" id="n-notfound"><rect x="30" y="470" width="300" height="54" rx="8"/><text x="46" y="493">Could not find a customer named '…'.</text><text class="s" x="46" y="512">nothing is created</text></g>
+          <g class="node" id="n-count"><rect x="350" y="232" width="190" height="54" rx="8"/><text x="364" y="255">How many matches?</text><text class="s" x="364" y="274">customers: never own company</text></g>
+          <g class="node end" id="n-one"><rect x="540" y="122" width="200" height="54" rx="8"/><text x="556" y="145">One: use it</text><text class="s" x="556" y="164">card shows the full Odoo name</text></g>
+          <g class="node end ask" id="n-many"><rect x="540" y="300" width="200" height="54" rx="8"/><text x="556" y="323">Several: ask (max 5)</text><text class="s" x="556" y="342">reply with number or name</text></g>
+          <g class="node end ask" id="n-didyoumean"><rect x="480" y="360" width="260" height="54" rx="8"/><text x="496" y="383">"No product named '…'. Did you mean:"</text><text class="s" x="496" y="402">user replies 1 to accept</text></g>
+          <g text-anchor="start">
+            <text class="elbl" x="160" y="178">none</text><text class="elbl" x="160" y="266">none</text><text class="elbl" x="160" y="354">none</text><text class="elbl" x="160" y="450">none</text>
+            <text class="elbl" x="282" y="117">found</text><text class="elbl" x="282" y="205">found</text><text class="elbl" x="282" y="293">found</text><text class="elbl" x="282" y="381">real name</text>
+            <text class="elbl" x="606" y="214">1</text><text class="elbl" x="606" y="296">2+</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Order as in <code>resolver.resolve_entities</code>. A guess is never accepted on its own: an AI suggestion becomes a one-item "Did you mean" list that the user must confirm, and then the approval card still follows.</figcaption>
+    </figure>
+    <div class="panel matcher-form">
+      <div class="seg" role="group" aria-label="What kind of name">
+        <button type="button" id="kind-customer" aria-pressed="true">Customer</button>
+        <button type="button" id="kind-product" aria-pressed="false">Product</button>
+      </div>
+      <div class="field"><label for="name-input">Name the AI sent</label><input id="name-input" value="Jansen" autocomplete="off"></div>
+      <div class="chips" id="examples" aria-label="Examples"></div>
+      <div class="field"><span class="tag">WHAT THE CHAT SAYS</span><div class="chat-msg" id="match-result" aria-live="polite"></div></div>
+      <ol class="trace" id="match-trace"></ol>
+      <p class="note">Seed data: 14 customers, 14 products. Internal contacts (My Company, Administrator, AI Agent, OdooBot) are excluded. The page cannot run the AI, so step 4 only shows the result the scripted test AI gives for "premium chair".</p>
+    </div>
+  </div>
+</section>
+
+<section id="boundary" aria-labelledby="h-bound">
+  <div class="section-head"><span class="num">04 · The safety boundary</span><h2 id="h-bound">What the AI sends, what the backend adds</h2>
+    <p>The AI picks one tool and fills in what the user said. Ids, prices and the document type always come from Odoo or from fixed rules in <code>odoo_client.py</code>, whatever the AI sends.</p></div>
+  <div class="boundary">
+    <div class="panel"><span class="pill open">AI sends</span><h3>Names and quantities only</h3>
+<pre>create_invoice({
+  "customer_name": "Pepsi",
+  "lines": [
+    {"product_name": "Chair",
+     "quantity": 3}
+  ],
+  "invoice_date": null
+})</pre>
+      <p class="note">Also accepted, because llama3.1 really sends them (experiment 13): lines as JSON text, one line without a list, quantity as text, plural names.</p></div>
+    <div class="panel"><span class="pill partial">Backend adds</span><h3>Checks, ids and prices</h3>
+      <ul class="clean">
+        <li><code>_map_intent</code>: one of 5 tools; quantity &gt; 0; a date only if it appears in the user's message</li>
+        <li><code>resolver</code>: "Pepsi" → customer id, "Chair" → product id</li>
+        <li><code>prepare_review</code>: Odoo list price 50.00, total 150.00, duplicate warning</li>
+        <li>Approval by a human, or nothing happens</li>
+      </ul></div>
+    <div class="panel"><span class="pill done">Odoo receives</span><h3>A draft, within the allow-list</h3>
+<pre>account.move.create({
+  "partner_id": &lt;id&gt;,
+  "move_type": "out_invoice",
+  "invoice_line_ids": [[0, 0, {
+    "product_id": &lt;id&gt;,
+    "quantity": 3}]]
+})</pre>
+      <p class="note">Unknown fields are dropped and reported. <code>price_unit</code> and <code>discount</code> are dropped unless <code>ODOO_ALLOW_AI_PRICES=true</code>. Keys starting with <code>_</code> are for the card only and are stripped.</p></div>
+  </div>
+  <div class="grid-2">
+    <div class="table-wrap"><table>
+      <caption class="note" style="caption-side: top; text-align: left; padding: 10px 12px">The 5 tools the AI can choose from (<code>agent.TOOLS</code>)</caption>
+      <thead><tr><th>Tool</th><th>Arguments</th><th>Leads to</th></tr></thead>
+      <tbody>
+        <tr><td><code>create_sales_order</code></td><td>customer_name, lines</td><td>approval card → draft quotation</td></tr>
+        <tr><td><code>create_invoice</code></td><td>customer_name, lines, invoice_date</td><td>approval card → draft customer invoice</td></tr>
+        <tr><td><code>lookup_records</code></td><td>what, search_text, limit (1–50)</td><td>read through the allow-list</td></tr>
+        <tr><td><code>ask_clarification</code></td><td>question</td><td>question shown to the user</td></tr>
+        <tr><td><code>refuse_request</code></td><td>reason</td><td>refusal, nothing changed</td></tr>
+      </tbody></table></div>
+    <div class="table-wrap"><table>
+      <caption class="note" style="caption-side: top; text-align: left; padding: 10px 12px">Allow-lists in <code>odoo_client.py</code></caption>
+      <thead><tr><th>Odoo model</th><th>Read</th><th>Create</th></tr></thead>
+      <tbody>
+        <tr><td><code>res.partner</code> customers</td><td>13 fields</td><td>–</td></tr>
+        <tr><td><code>product.product</code></td><td>9 fields</td><td>–</td></tr>
+        <tr><td><code>sale.order</code> quotations</td><td>11 fields</td><td>draft only; lines: product, qty, name</td></tr>
+        <tr><td><code>account.move</code></td><td>13 fields; customer invoices and credit notes only</td><td><code>out_invoice</code> draft only</td></tr>
+        <tr><td>anything else</td><td colspan="2"><span class="pill bad">refused</span> logged as <code>read_blocked</code> / <code>create_blocked</code></td></tr>
+      </tbody></table></div>
+  </div>
+</section>
+
+<section id="approval" aria-labelledby="h-appr">
+  <div class="section-head"><span class="num">05 · Approval</span><h2 id="h-appr">Every way an approval can end</h2>
+    <p>While the card is open, <code>chat_stream</code> waits on a <code>threading.Event</code>. Each ending below has its own fixed message, written by code.</p></div>
+  <figure>
+    <div class="diagram-wrap">
+      <svg class="diagram" viewBox="0 0 980 330" role="img" aria-label="State diagram: waiting for approval ends in created, declined, expired after 300 seconds, cancelled when the browser closes, or an Odoo error.">
+        <defs><marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+        <g style="color: var(--muted)" class="msg">
+          <path class="msg" d="M200 165 H286" marker-end="url(#arr3)"/>
+          <path class="msg" d="M490 140 C540 90, 560 62, 616 58" marker-end="url(#arr3)"/>
+          <path class="msg" d="M490 155 C545 140, 570 128, 616 128" marker-end="url(#arr3)"/>
+          <path class="msg" d="M490 175 C545 190, 570 202, 616 202" marker-end="url(#arr3)"/>
+          <path class="msg" d="M490 190 C540 240, 560 268, 616 272" marker-end="url(#arr3)"/>
+        </g>
+        <rect class="box" x="20" y="135" width="180" height="60" rx="8"/>
+        <text x="110" y="161" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Names resolved</text>
+        <text x="110" y="180" text-anchor="middle" class="sub">prices + warnings ready</text>
+        <rect class="box draft" x="290" y="125" width="200" height="80" rx="8"/>
+        <text x="390" y="155" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">Waiting for approval</text>
+        <text x="390" y="174" text-anchor="middle" class="sub">card: lines, total excl. VAT</text>
+        <text x="390" y="191" text-anchor="middle" class="sub">Reject · Approve draft</text>
+        <g text-anchor="start">
+          <text class="lbl" x="500" y="84">Approve draft</text>
+          <text class="lbl" x="520" y="132">Reject</text>
+          <text class="lbl" x="512" y="214">300 s, no answer</text>
+          <text class="lbl" x="500" y="262">tab closed</text>
+        </g>
+        <rect class="box ok" x="620" y="34" width="340" height="48" rx="8"/>
+        <text x="636" y="54" font-size="12.5" font-weight="600" fill="currentColor">Created a draft invoice in Odoo (record …).</text>
+        <text x="636" y="72" class="sub">audit: approval_answered, created</text>
+        <rect class="box" x="620" y="104" width="340" height="48" rx="8"/>
+        <text x="636" y="124" font-size="12.5" font-weight="600" fill="currentColor">No draft was created because you declined the request.</text>
+        <text x="636" y="142" class="sub">audit: approval_answered</text>
+        <rect class="box" x="620" y="178" width="340" height="48" rx="8"/>
+        <text x="636" y="198" font-size="12.5" font-weight="600" fill="currentColor">The approval expired. Nothing was created.</text>
+        <text x="636" y="216" class="sub">default 300 s · audit: approval_expired</text>
+        <rect class="box" x="620" y="248" width="340" height="48" rx="8"/>
+        <text x="636" y="268" font-size="12.5" font-weight="600" fill="currentColor">Cancelled, worker thread released</text>
+        <text x="636" y="286" class="sub">main.py: cancel_pending + discard_pending</text>
+      </svg>
+    </div>
+    <figcaption>If Odoo refuses the create, the chat shows "I couldn't complete the request:" plus Odoo's error in one line. The "tab closed" path is why 45 abandoned approvals no longer freeze the server (the previous group's V3 hung after 40).</figcaption>
+  </figure>
+</section>
+
+<section id="measured" aria-labelledby="h-meas">
+  <div class="section-head"><span class="num">06 · Measured</span><h2 id="h-meas">What the architecture changes bought</h2>
+    <p>Before and after, from the <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/experiments/EXPERIMENT-LOG.md">experiment log</a> and <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/tests/TEST-RESULTS.md">test results</a>. Grey is before, blue is after. Each chart has its own scale.</p></div>
+  <div class="charts" id="charts">
+    <div class="panel chart-card"><h3>Parallel requests that failed</h3><svg class="chart" id="c-parallel" viewBox="0 0 280 150" role="img" aria-label="Out of 40 parallel requests: 28 failed in V3, 0 in V3.1"></svg><p class="note">40 parallel requests, scripted AI. V3: 28 failed. V3.1: 0. (Exp. 3, 4)</p></div>
+    <div class="panel chart-card"><h3>New Odoo connection on Windows</h3><svg class="chart" id="c-conn" viewBox="0 0 280 150" role="img" aria-label="localhost 2.08 seconds, 127.0.0.1 0.03 seconds"></svg><p class="note"><code>localhost</code>: 2.08 s. <code>127.0.0.1</code>: 0.03 s. Floyd's PC. (Exp. 5)</p></div>
+    <div class="panel chart-card"><h3>Abandoned-approvals test on Windows</h3><svg class="chart" id="c-test" viewBox="0 0 280 150" role="img" aria-label="203.64 seconds before, 15.05 seconds after the localhost fix"></svg><p class="note">203.64 s → 15.05 s after the <code>127.0.0.1</code> fix. (Exp. 5)</p></div>
+    <div class="panel chart-card"><h3>First message after idle</h3><svg class="chart" id="c-cold" viewBox="0 0 280 150" role="img" aria-label="About 40 to 45 seconds with a cold model, 2 to 3 seconds with keep-alive"></svg><p class="note">Range bars. Cold model ~40–45 s; with keep-alive 2–3 s. RTX 3070 Ti, llama3.1. (Exp. 12)</p></div>
+  </div>
+</section>
+
+<section id="deploy" aria-labelledby="h-dep">
+  <div class="section-head"><span class="num">07 · Where it runs</span><h2 id="h-dep">One PC, five processes</h2>
+    <p>Everything runs locally; customer data never leaves the PC. <code>python main.py</code> in <code>Application/V3.1</code> starts the backend and the chat UI.</p></div>
+  <figure>
+    <div class="diagram-wrap">
+      <svg class="diagram" viewBox="0 0 1000 300" role="img" aria-label="Deployment: browser to Vite dev server port 5173, proxy to FastAPI port 8001, which calls Ollama on port 11434 and Odoo on port 8069 backed by PostgreSQL.">
+        <defs><marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+        <rect x="8" y="8" width="984" height="284" rx="14" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="6 5"/>
+        <text x="24" y="32" class="sub">one Windows PC (team setup) · nothing exposed to the network unless UI_ON_NETWORK=1 (no login)</text>
+        <g style="color: var(--muted)">
+          <path class="msg" d="M160 150 H216" marker-end="url(#arr4)"/>
+          <path class="msg" d="M380 150 H436" marker-end="url(#arr4)"/>
+          <path class="msg" d="M600 130 L690 82" marker-end="url(#arr4)"/>
+          <path class="msg" d="M600 170 L690 218" marker-end="url(#arr4)"/>
+          <path class="msg" d="M850 218 H886" marker-end="url(#arr4)"/>
+          <path class="msg" d="M520 190 V238" marker-end="url(#arr4)"/>
+        </g>
+        <rect class="box" x="30" y="120" width="130" height="60" rx="8"/><text x="95" y="146" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Browser</text><text x="95" y="164" text-anchor="middle" class="sub">chat screen</text>
+        <rect class="box" x="220" y="120" width="160" height="60" rx="8"/><text x="300" y="146" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Vite · :5173</text><text x="300" y="164" text-anchor="middle" class="sub">React UI, proxies /api</text>
+        <rect class="box accent" x="440" y="110" width="160" height="80" rx="8"/><text x="520" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">FastAPI · :8001</text><text x="520" y="158" text-anchor="middle" class="sub">agent · resolver</text><text x="520" y="174" text-anchor="middle" class="sub">odoo_client</text>
+        <rect class="box" x="694" y="50" width="200" height="60" rx="8"/><text x="794" y="76" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Ollama · :11434</text><text x="794" y="94" text-anchor="middle" class="sub">llama3.1 · 5.3 GB on the GPU</text>
+        <rect class="box" x="694" y="190" width="156" height="60" rx="8"/><text x="772" y="216" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Odoo 20 · :8069</text><text x="772" y="234" text-anchor="middle" class="sub">user ai_agent</text>
+        <rect class="box" x="890" y="190" width="90" height="60" rx="8"/><text x="935" y="216" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">PostgreSQL</text><text x="935" y="234" text-anchor="middle" class="sub">≥ 16</text>
+        <rect class="box draft" x="440" y="242" width="160" height="40" rx="8"/><text x="520" y="267" text-anchor="middle" font-size="12" fill="currentColor">logs/audit.jsonl</text>
+        <g text-anchor="middle"><text class="lbl" x="188" y="142">HTTP</text><text class="lbl" x="408" y="142">SSE</text><text class="lbl" x="636" y="96">1 call</text><text class="lbl" x="636" y="212">XML-RPC</text></g>
+      </svg>
+    </div>
+    <figcaption><code>localhost</code> in <code>ODOO_URL</code> is rewritten to <code>127.0.0.1</code> (2 s per connection on Windows otherwise). Keep-alive (<code>OLLAMA_KEEP_ALIVE</code>, default 1 h) keeps the model on the GPU between messages.</figcaption>
+  </figure>
+</section>
+
+<section id="code" aria-labelledby="h-code">
+  <div class="section-head"><span class="num">08 · Code map</span><h2 id="h-code">Files, jobs and owners</h2>
+    <p>Who changes what, so Floyd's and Marija's work don't collide. The split of <code>agent.py</code> is still a <strong>proposal</strong> to agree on (open in <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/decisions/DECISIONS.md">DECISIONS.md</a>).</p></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>File (in <code>Application/V3.1</code>)</th><th>Job</th><th>Owner</th></tr></thead>
+    <tbody>
+      <tr><td><code>chat-UI/src/Chat.jsx</code></td><td>Chat screen, reads the SSE stream, approval card</td><td class="owner">Marija</td></tr>
+      <tr><td><code>backend/agent.py</code></td><td>Prompt, tools, the AI call, streaming</td><td class="owner">Marija</td></tr>
+      <tr><td><code>backend/agent.py</code></td><td><code>_map_intent</code>, approval wait, <code>_summarize_result</code>, pick from list</td><td class="owner">Floyd</td></tr>
+      <tr><td><code>backend/resolver.py</code></td><td>Names → ids, "which one?", AI product suggestion check, prices and duplicate warning</td><td class="owner">Floyd</td></tr>
+      <tr><td><code>backend/odoo_client.py</code></td><td>The only code that talks to Odoo: allow-lists, timeouts, short errors</td><td class="owner">Floyd</td></tr>
+      <tr><td><code>backend/main.py</code></td><td>FastAPI endpoints, worker threads, disconnect clean-up</td><td class="owner">Floyd</td></tr>
+      <tr><td><code>backend/audit.py</code></td><td>Append-only audit log</td><td class="owner">Floyd</td></tr>
+      <tr><td><code>scripts/replay_extraction.py</code></td><td>Real-model extraction benchmark</td><td class="owner">Marija</td></tr>
+      <tr><td><code>tests/</code> (64 tests) · <code>tests/fake_ollama.py</code></td><td>Automated tests with a scripted AI that copies llama3.1's real mistakes</td><td class="owner">Floyd</td></tr>
+      <tr><td><code>Setup/</code> (repo root)</td><td>Seed data, health check, test-run reports</td><td class="owner">Floyd</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="interfaces" aria-labelledby="h-if">
+  <div class="section-head"><span class="num">09 · Interfaces</span><h2 id="h-if">Endpoints, stream events, audit events</h2></div>
+  <div class="grid-3">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/health</code></td><td>Odoo reachable + version</td></tr>
+        <tr><td><code>POST /api/chat</code></td><td>One message, reply as SSE</td></tr>
+        <tr><td><code>POST /api/confirm/{id}</code></td><td>Approve or reject the card</td></tr>
+        <tr><td><code>GET /api/conversation/{id}</code></td><td>History</td></tr>
+        <tr><td><code>DELETE /api/conversation/{id}</code></td><td>New chat</td></tr>
+      </tbody></table></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>SSE event</th><th>Carries</th></tr></thead>
+      <tbody>
+        <tr><td><code>status</code></td><td>progress text</td></tr>
+        <tr><td><code>tool_call</code></td><td>tool name + result</td></tr>
+        <tr><td><code>confirmation_required</code></td><td>summary, values, review (prices, total, warnings)</td></tr>
+        <tr><td><code>token</code></td><td>the reply text</td></tr>
+        <tr><td><code>metrics</code></td><td>timings</td></tr>
+        <tr><td><code>done</code></td><td>end of reply</td></tr>
+      </tbody></table></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Audit event</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><code>ai_tool_call</code></td><td>raw AI output, every message</td></tr>
+        <tr><td><code>approval_*</code></td><td>requested, answered, expired</td></tr>
+        <tr><td><code>created</code></td><td>draft made in Odoo</td></tr>
+        <tr><td><code>create_blocked</code> / <code>read_blocked</code></td><td>allow-list said no</td></tr>
+        <tr><td><code>product_suggestion</code></td><td>AI guess for an unknown product</td></tr>
+        <tr><td><code>chat_timing</code></td><td>seconds per step</td></tr>
+      </tbody></table></div>
+  </div>
+</section>
+</main>
+<footer>
+  Blueprint v1.0 · 16 Nov 2026 · Source: code in <code>Application/V3.1</code> (branch of PR #8), <code>CHANGELOG.md</code>, <code>EXPERIMENT-LOG.md</code>, <code>TEST-RESULTS.md</code>. Changes to this design are logged in <code>DECISIONS.md</code>.
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+// Shared helpers. Every library is optional: the page reads fine without D3, Three.js or Motion.
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function safely(label, fn) { try { fn(); } catch (e) { console.warn(label + " skipped:", e); } }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function revealOnScroll(selector) {
+  if (REDUCED || !window.Motion) return;
+  const { animate, inView, stagger } = Motion;
+  document.querySelectorAll(selector).forEach(group => {
+    inView(group, () => {
+      const items = group.children.length ? group.children : [group];
+      animate(items, { transform: ["translateY(10px)", "none"] }, { duration: .45, delay: stagger(.05), easing: "ease-out" });
+    }, { amount: .15 });
+  });
+}
+</script>
+<script>
+// ---- 01: step-through of one request (works without Three.js) ----
+const STEPS = [
+  { at: "ui", where: "Chat UI · Chat.jsx", text: "You type: “Create an invoice for Pepsi with 3 Chair”." },
+  { at: "api", where: "API · main.py", text: "POST /api/chat. The reply streams back as Server-Sent Events." },
+  { at: "agent", where: "Agent · agent.py", text: "chat_stream runs in a worker thread, so a slow AI or Odoo never blocks other users." },
+  { at: "ai", where: "AI · Ollama llama3.1", text: "One AI call, temperature 0. It picks create_invoice with customer_name “Pepsi” and one line: Chair × 3.", audit: "ai_tool_call" },
+  { at: "agent", where: "Agent · _map_intent", text: "Checks the arguments (tool, quantity > 0, date) and turns them into a draft account.move request." },
+  { at: "resolver", where: "Resolver · resolver.py", text: "“Pepsi” matches exactly (not Pepsi Cola Bottling). “Chair” matches exactly (not Ergonomic Chair)." },
+  { at: "odoo", via: ["client"], where: "Odoo client → Odoo", text: "Reads through the allow-list: the ids, the list price 50.00, and recent drafts for the duplicate check." },
+  { at: "ui", via: ["client", "resolver", "agent", "api"], where: "Approval card", text: "Chair × 3 @ 50.00 = 150.00 · Total excl. VAT 150.00. You click Approve draft.", audit: "approval_answered" },
+  { at: "odoo", via: ["api", "agent", "client"], where: "Odoo client → Odoo", text: "Creates a draft account.move (move_type out_invoice). The price comes from Odoo, not from the AI.", audit: "created" },
+  { at: "ui", via: ["client", "agent", "api"], where: "Chat UI", text: "“Created a draft invoice in Odoo (record …).” In Odoo: 150.00 excl. VAT, 181.50 incl. 21% VAT." },
+];
+let step = 0, playing = null;
+const listEl = document.getElementById("step-list");
+listEl.innerHTML = STEPS.map((s, i) => `<li><button type="button" data-i="${i}"><span class="n">${i + 1}</span><span>${esc(s.where)}</span></button></li>`).join("");
+listEl.addEventListener("click", e => { const b = e.target.closest("button"); if (b) { stopPlay(); go(+b.dataset.i); } });
+const stackHooks = [];
+function go(i) {
+  step = Math.max(0, Math.min(STEPS.length - 1, i));
+  const s = STEPS[step];
+  document.getElementById("step-now").innerHTML = `<span class="where">Step ${step + 1} of ${STEPS.length} · ${esc(s.where)}</span>${esc(s.text)}`;
+  listEl.querySelectorAll("li").forEach((li, j) => j === step ? li.setAttribute("aria-current", "step") : li.removeAttribute("aria-current"));
+  const cur = listEl.children[step]; if (cur && cur.scrollIntoView && playing) cur.scrollIntoView({ block: "nearest" });
+  document.getElementById("prev").disabled = step === 0;
+  document.getElementById("next").disabled = step === STEPS.length - 1;
+  stackHooks.forEach(h => h(step));
+}
+function stopPlay() { clearInterval(playing); playing = null; document.getElementById("play").textContent = "Play"; }
+document.getElementById("prev").onclick = () => { stopPlay(); go(step - 1); };
+document.getElementById("next").onclick = () => { stopPlay(); go(step + 1); };
+document.getElementById("play").onclick = () => {
+  if (playing) return stopPlay();
+  if (step === STEPS.length - 1) go(0);
+  document.getElementById("play").textContent = "Pause";
+  playing = setInterval(() => { if (step >= STEPS.length - 1) stopPlay(); else go(step + 1); }, 2600);
+};
+go(0);
+
+// ---- 01: the 3D stack (Three.js) ----
+safely("3D stack", () => {
+  const host = document.getElementById("stack-canvas");
+  if (!window.THREE) { host.classList.add("no-3d"); return; }
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { host.classList.add("no-3d"); return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  host.prepend(renderer.domElement);
+  renderer.domElement.setAttribute("aria-hidden", "true");
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
+  camera.position.set(0, 4, 31);
+  camera.lookAt(0, 0, 0);
+  scene.add(new THREE.AmbientLight(0xffffff, 1.25));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(6, 12, 10); scene.add(sun);
+
+  const col = n => new THREE.Color(css(n) || "#888");
+  const LAYERS = [
+    { key: "ui", y: 5.6, title: "Chat UI", sub: "React + Vite · :5173" },
+    { key: "api", y: 3.4, title: "API", sub: "FastAPI + SSE · :8001" },
+    { key: "agent", y: 1.2, title: "Agent", sub: "agent.py · 1 AI call" },
+    { key: "resolver", y: -1.0, title: "Resolver", sub: "resolver.py · names → ids" },
+    { key: "client", y: -3.2, title: "Odoo client", sub: "odoo_client.py · allow-lists" },
+    { key: "odoo", y: -5.4, title: "Odoo 20", sub: "XML-RPC · :8069 · PostgreSQL" },
+  ];
+  const SIDES = [
+    { key: "ai", pos: [9.2, 1.2, 0], title: "Ollama", sub: "llama3.1 · GPU" },
+    { key: "audit", pos: [-9.2, -2.1, 0], title: "Audit log", sub: "logs/audit.jsonl" },
+  ];
+  function labelTexture(title, sub, w, h) {
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const g = c.getContext("2d");
+    g.fillStyle = css("--ink"); g.font = `600 ${h * 0.34}px ${css("--font-display")}`; g.textBaseline = "middle";
+    g.fillText(title, h * 0.28, h * 0.36);
+    g.fillStyle = css("--muted"); g.font = `${h * 0.22}px ${css("--font-mono")}`;
+    g.fillText(sub, h * 0.28, h * 0.72);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 4; t.colorSpace = THREE.SRGBColorSpace; return t;
+  }
+  const world = new THREE.Group(); world.position.x = -0.6; scene.add(world);
+  const nodes = {}, mats = {};
+  const panelC = col("--panel"), lineC = col("--line"), accentC = col("--accent"), draftC = col("--draft");
+  function slab(key, w, h, d, pos, title, sub) {
+    const mat = new THREE.MeshStandardMaterial({ color: panelC, roughness: .85, metalness: 0, emissive: accentC, emissiveIntensity: 0 });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(...pos);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({ color: lineC }));
+    mesh.add(edges);
+    const label = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.92, h * 0.86), new THREE.MeshBasicMaterial({ map: labelTexture(title, sub, 1024, Math.round(1024 * h * .86 / (w * .92))), transparent: true }));
+    label.position.z = d / 2 + 0.01; mesh.add(label);
+    world.add(mesh); nodes[key] = mesh; mats[key] = { mat, edges };
+  }
+  document.fonts.ready.then(() => {
+    LAYERS.forEach(L => slab(L.key, 11, 1.5, 3.2, [0, L.y, 0], L.title, L.sub));
+    SIDES.forEach(S => slab(S.key, 5.2, 1.5, 2.4, S.pos, S.title, S.sub));
+    // connectors: the vertical spine and the two side links
+    const spine = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 5.6, 0), new THREE.Vector3(0, -5.4, 0)]);
+    const dashed = g => { const l = new THREE.Line(g, new THREE.LineDashedMaterial({ color: lineC, dashSize: .25, gapSize: .2 })); l.computeLineDistances(); world.add(l); };
+    dashed(spine);
+    [["agent", "ai"], ["client", "audit"]].forEach(([a, b]) => {
+      const g = new THREE.BufferGeometry().setFromPoints([nodes[a].position, nodes[b].position]);
+      dashed(g);
+    });
+    start();
+  });
+
+  const packet = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 16), new THREE.MeshStandardMaterial({ color: accentC, emissive: accentC, emissiveIntensity: .8 }));
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 16), new THREE.MeshBasicMaterial({ color: accentC, transparent: true, opacity: .18 }));
+  packet.add(halo); world.add(packet);
+  const front = key => { const p = nodes[key].position; return new THREE.Vector3(p.x, p.y, 2.2); };
+  let path = [], seg = 0, segT = 1, auditFlash = 0, lastKey = "ui";
+
+  function start() {
+    packet.position.copy(front("ui"));
+    stackHooks.push(i => {
+      const s = STEPS[i];
+      const keys = [...(s.via || []), s.at];
+      path = [packet.position.clone(), ...keys.map(front)]; seg = 0; segT = REDUCED ? 1 : 0;
+      if (REDUCED) packet.position.copy(path[path.length - 1]);
+      if (s.audit) auditFlash = 1;
+      lastKey = s.at;
+    });
+    go(step);
+    resize(); new ResizeObserver(resize).observe(host);
+    renderer.setAnimationLoop(tick);
+  }
+  function resize() {
+    const w = host.clientWidth, h = Math.max(host.clientHeight, 440);
+    renderer.setSize(w, h, false); renderer.domElement.style.height = h + "px";
+    camera.aspect = w / h;
+    camera.position.z = w < 520 ? 44 : 35;
+    camera.updateProjectionMatrix();
+  }
+  // drag to rotate
+  let drag = null, rotY = -0.22, rotX = 0.1, idle = 0;
+  renderer.domElement.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, ry: rotY, rx: rotX }; renderer.domElement.setPointerCapture(e.pointerId); });
+  renderer.domElement.addEventListener("pointermove", e => { if (!drag) return; rotY = drag.ry + (e.clientX - drag.x) / 160; rotX = Math.max(-.5, Math.min(.6, drag.rx + (e.clientY - drag.y) / 260)); idle = 0; });
+  renderer.domElement.addEventListener("pointerup", () => { drag = null; });
+  const clock = new THREE.Clock();
+  function tick() {
+    const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
+    idle += dt;
+    const sway = (!REDUCED && !drag && idle > 3) ? Math.sin(t * .35) * .12 : 0;
+    world.rotation.y += ((rotY + sway) - world.rotation.y) * .08;
+    world.rotation.x += (rotX - world.rotation.x) * .08;
+    if (path.length > 1 && seg < path.length - 1) {
+      segT += dt * 2.6;
+      const a = path[seg], b = path[seg + 1], k = Math.min(segT, 1), e = k * k * (3 - 2 * k);
+      packet.position.lerpVectors(a, b, e);
+      if (segT >= 1) { seg++; segT = 0; }
+    }
+    halo.scale.setScalar(1 + (REDUCED ? 0 : Math.sin(t * 4) * .12));
+    for (const key in mats) {
+      const on = key === lastKey ? 1 : 0;
+      const target = key === "audit" ? auditFlash * .55 : on * .35;
+      const m = mats[key].mat; m.emissive.copy(key === "audit" ? draftC : accentC);
+      m.emissiveIntensity += (target - m.emissiveIntensity) * .12;
+    }
+    auditFlash = Math.max(0, auditFlash - dt * .6);
+    renderer.render(scene, camera);
+  }
+});
+
+// ---- 03: name matching tester (same order as resolver.resolve_entities) ----
+const SEED = {
+  customer: ["Pepsi", "Pepsi Cola Bottling", "L. Luther", "Jansen Bouw", "Jansen & Zonen", "De Vries Fietsen", "Van den Berg Catering", "Bakkerij Smit", "Tech4Kids", "Nordic Furniture GmbH", "Müller GmbH", "Acme BV", "Acme Trading BV", "Studio Lux"],
+  product: ["Chair", "Chair Floor Protection", "Ergonomic Chair", "Desk", "Desk Lamp", "Standing Desk", "Office Desk Large", "Monitor Stand", "Whiteboard", "Filing Cabinet", "Keyboard", "Cable Management Kit", "Installation Service", "Delivery"],
+};
+const INTERNAL = ["My Company", "Administrator", "AI Agent", "OdooBot"];
+const EXAMPLES = { customer: ["Jansen", "pepsi", "Acme", "Acme Trading BV", "Luther", "Globex", "My Company"], product: ["Chair", "chairs", "Floor", "Desk", "Lamp", "premium chair", "sofa"] };
+// shortcut: the scripted test AI's answer (tests/fake_ollama.py); the real model's answer is not recorded yet
+const RECORDED_SUGGESTION = { "premium chair": "Ergonomic Chair", "premium chairs": "Ergonomic Chair" };
+let kind = "customer";
+function find(text, kind, trace) {
+  const t = text.toLowerCase();
+  const pool = SEED[kind];
+  const exact = pool.filter(n => n.toLowerCase() === t);
+  if (exact.length) { trace.push(["n-exact", "e-exact-yes", `Exact name “${text}” found.`]); return exact; }
+  trace.push(["n-exact", "e-exact-no", `No exact name “${text}”.`]);
+  const part = pool.filter(n => n.toLowerCase().includes(t)).sort();
+  if (part.length) { trace.push(["n-partial", "e-partial-yes", `${part.length} name(s) contain “${text}”.`]); return part; }
+  trace.push(["n-partial", "e-partial-no", `No name contains “${text}”.`]);
+  return [];
+}
+function runMatch() {
+  const raw = document.getElementById("name-input").value.trim();
+  const out = document.getElementById("match-result"), tr = document.getElementById("match-trace");
+  const flow = document.getElementById("flow");
+  flow.querySelectorAll(".on").forEach(n => n.classList.remove("on"));
+  if (!raw) { out.textContent = "Type a name."; tr.innerHTML = ""; flow.classList.remove("tracing"); return; }
+  const label = kind === "customer" ? "customer" : "product";
+  const trace = [["n-in", "e-in", `The AI sent “${raw}”.`]];
+  let results = find(raw, kind, trace), message;
+  if (!results.length && raw.toLowerCase().endsWith("s")) {
+    trace.push(["n-strip", null, `Ends in “s”: try “${raw.slice(0, -1)}”.`]);
+    const sub = []; results = find(raw.slice(0, -1), kind, sub);
+    trace.push(["n-strip", results.length ? "e-strip-yes" : "e-strip-no", results.length ? `Found with “${raw.slice(0, -1)}”.` : "Still nothing."]);
+  } else if (!results.length) trace.push(["n-strip", "e-strip-no", "Does not end in “s”."]);
+  if (!results.length && kind === "product") {
+    const guess = RECORDED_SUGGESTION[raw.toLowerCase()];
+    if (guess) {
+      trace.push(["n-suggest", "e-suggest-yes", `AI suggestion: “${guess}” (a real product, so it is offered).`]);
+      trace.push(["n-didyoumean", null, "The user must confirm it."]);
+      message = `No product named '${raw}'. Did you mean:\n1. ${guess}\nReply with the number or the full name.`;
+    } else {
+      trace.push(["n-suggest", "e-suggest-no", "Here the app asks the AI to pick from the 14 product names. This page can't run the AI, so it continues as if the AI found no match."]);
+    }
+  }
+  if (!message && !results.length) {
+    const internal = kind === "customer" && INTERNAL.some(n => n.toLowerCase().includes(raw.toLowerCase()));
+    if (internal) trace.push(["n-exact", null, "This is an internal contact, which is never a customer."]);
+    trace.push(["n-notfound", null, "Nothing is created."]);
+    message = `Could not find a ${label} named '${raw}'.`;
+  } else if (!message && results.length > 1) {
+    const shown = results.slice(0, 5);
+    trace.push(["n-count", "e-many", `${results.length} matches: the user picks one.`]); trace.push(["n-many", null, ""]);
+    message = `More than one ${label} matches '${raw}':\n${shown.map((n, i) => `${i + 1}. ${n}`).join("\n")}\nReply with the number or the full name.`;
+  } else if (!message) {
+    trace.push(["n-count", "e-one", "Exactly one match."]); trace.push(["n-one", null, ""]);
+    message = `✓ ${label === "customer" ? "Customer" : "Product"}: ${results[0]}  (the approval card shows this name)`;
+  }
+  flow.classList.add("tracing");
+  trace.forEach(([n, e]) => { if (n) flow.querySelector("#" + n).classList.add("on"); if (e) flow.querySelector("#" + e).classList.add("on"); });
+  out.textContent = message;
+  tr.innerHTML = trace.filter(t => t[2]).map(t => `<li>${esc(t[2])}</li>`).join("");
+  if (!REDUCED && window.Motion) Motion.animate(out, { transform: ["translateY(6px)", "none"] }, { duration: .3 });
+}
+function setKind(k) {
+  kind = k;
+  document.getElementById("kind-customer").setAttribute("aria-pressed", k === "customer");
+  document.getElementById("kind-product").setAttribute("aria-pressed", k === "product");
+  document.querySelector("#n-notfound text").textContent = `Could not find a ${k} named '…'.`;
+  const ex = document.getElementById("examples");
+  ex.innerHTML = EXAMPLES[k].map(x => `<button type="button" class="chip">${esc(x)}</button>`).join("");
+  document.getElementById("name-input").value = EXAMPLES[k][0];
+  runMatch();
+}
+document.getElementById("kind-customer").onclick = () => setKind("customer");
+document.getElementById("kind-product").onclick = () => setKind("product");
+document.getElementById("examples").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { document.getElementById("name-input").value = b.textContent; runMatch(); } });
+document.getElementById("name-input").addEventListener("input", runMatch);
+setKind("customer");
+
+// ---- 06: before/after charts (D3) ----
+safely("charts", () => {
+  if (!window.d3) return;
+  const charts = [
+    { id: "c-parallel", unit: "", rows: [{ k: "V3", v: [28, 28] }, { k: "V3.1", v: [0, 0] }], max: 40, fmt: d => d },
+    { id: "c-conn", unit: " s", rows: [{ k: "localhost", v: [2.08, 2.08] }, { k: "127.0.0.1", v: [0.03, 0.03] }], max: 2.5, fmt: d => d.toFixed(2) },
+    { id: "c-test", unit: " s", rows: [{ k: "before", v: [203.64, 203.64] }, { k: "after", v: [15.05, 15.05] }], max: 220, fmt: d => d.toFixed(2) },
+    { id: "c-cold", unit: " s", rows: [{ k: "cold", v: [40, 45] }, { k: "keep-alive", v: [2, 3] }], max: 50, fmt: d => d, range: true },
+  ];
+  charts.forEach(c => {
+    const svg = d3.select("#" + c.id), W = 280, H = 150, m = { l: 74, r: 52, t: 10, b: 26 };
+    const x = d3.scaleLinear().domain([0, c.max]).range([m.l, W - m.r]);
+    const y = d3.scaleBand().domain(c.rows.map(r => r.k)).range([m.t, H - m.b]).padding(.32);
+    svg.append("g").attr("class", "grid").attr("transform", `translate(0,${H - m.b})`)
+      .call(d3.axisBottom(x).ticks(3).tickSize(-(H - m.t - m.b)).tickFormat(d => d + c.unit)).call(g => g.select(".domain").remove());
+    svg.append("g").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).tickSize(0)).call(g => g.select(".domain").remove()).selectAll("text").attr("dx", "-6");
+    const bars = svg.selectAll(".b").data(c.rows).join("rect")
+      .attr("class", (d, i) => i === 0 ? "bar-before" : "bar-after")
+      .attr("y", d => y(d.k)).attr("height", y.bandwidth()).attr("rx", 3)
+      .attr("x", d => c.range ? x(d.v[0]) : x(0)).attr("width", d => Math.max(2, x(d.v[1]) - (c.range ? x(d.v[0]) : x(0))));
+    const labels = svg.selectAll(".val").data(c.rows).join("text").attr("class", "val")
+      .attr("x", d => x(d.v[1]) + 6).attr("y", d => y(d.k) + y.bandwidth() / 2).attr("dy", ".35em")
+      .text(d => (c.range ? `${c.fmt(d.v[0])}–${c.fmt(d.v[1])}` : c.fmt(d.v[1])) + c.unit);
+    if (!REDUCED) {
+      const run = () => {
+        bars.attr("width", 0).transition().duration(900).ease(d3.easeCubicOut).attr("width", d => Math.max(2, x(d.v[1]) - (c.range ? x(d.v[0]) : x(0))));
+        labels.attr("opacity", 0).transition().delay(700).duration(300).attr("opacity", 1);
+      };
+      if (window.Motion) Motion.inView(svg.node(), run, { amount: .5 }); else run();
+    }
+  });
+});
+revealOnScroll("#facts");
+revealOnScroll(".boundary");
+</script>
+</body>
+</html>
