@@ -105,10 +105,10 @@ Current matching is deterministic exact-first matching with partial fallback, ba
 
 ## Verification and delivery sequence
 
-Phases, owners and test gates: [build plan](../planning/BUILD-PLAN.html).
+Phases, owners and test gates: [build plan](BUILD-PLAN.html).
 
 1. Team reviews scope, business rules, contract and MCP ownership with Witek.
-2. Freeze a reproducible synthetic dataset and label the 30-to-50-prompt evaluation set.
+2. Freeze a reproducible synthetic dataset and label the evaluation sets: an accuracy set of at least 50 complete sales descriptions (30 first), plus a separate edge-case set.
 3. Complete durable traceability and approval ownership/retry checks.
 4. Implement the MCP adapter over the shared service and test with an external assistant.
 5. Measure entity precision/recall, threshold behaviour, complete sales-order accuracy and entry time.

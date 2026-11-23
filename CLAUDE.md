@@ -66,10 +66,10 @@ Tests read Odoo credentials from `Application/V3.1/.env` or `TEST_ODOO_URL/DB/US
 - Every PR adds an entry to `documentation/our-work/changes/CHANGELOG.md`.
 - Test runs → `documentation/our-work/tests/TEST-RESULTS.md` (+ report from `Setup/run_tests.py`); measurements/real-AI findings → `documentation/our-work/experiments/EXPERIMENT-LOG.md`; decisions → `documentation/our-work/decisions/DECISIONS.md`.
 - Work on a branch and merge to `main` via pull request.
-- PRD and blueprint: `documentation/our-work/design/PRD.md` and `BLUEPRINT.md` (Anastasia's text, the reference; replaces the previous group's `prd.md`) with readable HTML versions `PRD.html` and `BLUEPRINT.html` next to them: change both together. Build plan: `documentation/our-work/planning/BUILD-PLAN.html`; tasks are ticked in its `PLAN` data block. Changes to the PRD or the build plan are logged in `DECISIONS.md` with the reason.
+- PRD and blueprint: `documentation/our-work/design/PRD.md` and `BLUEPRINT.md` (Anastasia's text, the reference; replaces the previous group's `prd.md`) with readable HTML versions `PRD.html` and `BLUEPRINT.html` next to them: change both together. Build plan: `documentation/our-work/design/BUILD-PLAN.html` (next to them, so the page tabs also work in a downloaded folder); tasks are ticked in its `PLAN` data block. Changes to the PRD or the build plan are logged in `DECISIONS.md` with the reason.
 
 ## Build workflow (agreed with the supervisor, 16 Nov 2026)
-- Work in phases from the build plan (`planning/BUILD-PLAN.html`); each phase ends with a **test gate** (`pytest Application/V3.1/tests`, plus `npm run lint && npm run build` if the UI changed).
+- Work in phases from the build plan (`design/BUILD-PLAN.html`); each phase ends with a **test gate** (`pytest Application/V3.1/tests`, plus `npm run lint && npm run build` if the UI changed).
 - Commit and push only when the gate passes, and push after every phase so teammates can pull the latest before they start.
 
 ## Reports for people

@@ -6,9 +6,7 @@ When a data-contract decision is made, also tick it in [DATA-CONTRACT.md](../des
 ## Decided
 | Date | Decision | Why | Alternatives considered | Who |
 |---|---|---|---|---|
-| 2026-11-23 | MCP approval stays with a person: no `approve_draft` tool for an AI; approval in the review screen or a client confirmation the model cannot answer | An assistant that can call approve can approve its own draft, which removes human control | `approve_draft` / `reject_draft` as MCP tools (blueprint 1.0) | Floyd |
-| 2026-11-23 | Definition of done ranked (recommendation, to confirm against the charter): must = draft flow, >90% evaluation, MCP with human approval, reviewed docs; should = traceability; could = log-in and roles (before real customer data) | Not all items are equally required; log-in should not become mandatory by accident | Everything equally required (PRD 1.0) | Floyd |
-| 2026-11-23 | Anastasia's PRD and blueprint (`design/PRD.md`, `BLUEPRINT.md`, v1.1 with review changes) are the reference, with HTML versions next to them; our earlier HTML PRD and blueprint are dropped; the build plan moves to `planning/` and follows the blueprint's delivery sequence | One PRD and one blueprint; hers knows the charter (MCP, >90%); the previous group's `prd.md` promised features that were never built | Keep two sets; keep our HTML PRD | Floyd |
+| 2026-11-23 | Anastasia's PRD and blueprint (`design/PRD.md`, `BLUEPRINT.md`, v1.1 with review changes) are the reference, with HTML versions next to them; our earlier HTML PRD and blueprint are dropped; the build plan moves next to them in `design/` and follows the blueprint's delivery sequence | One PRD and one blueprint; hers knows the charter (MCP, >90%); the previous group's `prd.md` promised features that were never built | Keep two sets; keep our HTML PRD | Floyd |
 | 2026-11-16 | Start testing with entrepreneurs now (a few demos, in person and via LinkedIn) instead of waiting until the product is finished | Supervisor: validate the ~80% that is built before over-investing in the last 20% | Finish first, test at the end | Team + supervisor |
 | 2026-11-16 | Build in phases from a build plan; every phase ends with a test gate and is pushed only when the tests pass | No broken code on GitHub; teammates always pull a working version | Push whenever | Team + supervisor |
 | 2026-11-16 | Reports for people are interactive HTML pages (D3, Three.js, Motion); the Markdown files stay the record | Supervisor: documentation must be readable for humans, not just AI | Markdown/PDF only | Team + supervisor |
@@ -25,6 +23,8 @@ When a data-contract decision is made, also tick it in [DATA-CONTRACT.md](../des
 ## Open – to decide in the Floyd/Marija meeting
 | Topic | Recommendation (see [HANDOFF-MARIJA.md](../planning/HANDOFF-MARIJA.md)) |
 |---|---|
+| MCP approval (proposed 23 Nov, for the supervisor review) | No `approve_draft` tool for an AI: a person approves in the review screen or through a client confirmation the model cannot answer. Reason: an assistant that can approve can approve its own draft |
+| Definition-of-done ranking (proposed 23 Nov, confirm against the charter) | Must: draft flow, >90% evaluation, MCP with human approval, reviewed docs. Should: traceability. Could: log-in and roles, before real customer data |
 | Branch plan | Short branches from `main`, every change via a PR reviewed by the other; protect `main` (1 approval) |
 | Ownership of `agent.py` | Floyd first moves resolution/validation/approval into own files (no behaviour change), then Marija owns the rest |
 | Data contract D1, D3, D4, D5, D8, D10 | See the recommendations in the handoff |

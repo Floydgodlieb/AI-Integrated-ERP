@@ -295,7 +295,7 @@ svg.diagram .nope text { fill: var(--bad); }
     <nav class="tabs" aria-label="Project documents">
       <a href="PRD.html">PRD</a>
       <a href="BLUEPRINT.html" aria-current="page">Blueprint</a>
-      <a href="../planning/BUILD-PLAN.html">Build plan</a>
+      <a href="BUILD-PLAN.html">Build plan</a>
     </nav>
   </div>
 </header>
@@ -304,7 +304,7 @@ svg.diagram .nope text { fill: var(--bad); }
   <span class="eyebrow">SYSTEM BLUEPRINT · version 1.1 · 23 November 2026 · companion to the <a href="PRD.html">PRD</a></span>
   <h1>How it works, and what we still need to build</h1>
   <p class="lead">The building blocks of the assistant, the journey of one request, where the safety rules sit, and how other AI assistants will connect. Plain language first; technical details are folded away under "For developers".</p>
-  <div class="status-line" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.88rem;color:var(--muted)"><span class="pill partial">Draft</span>Written by Anastasia, updated with the review points of 23 November. "Today" means the code on <code>main</code> (16 November). Planned parts still need building and acceptance tests. Technical version: <a href="BLUEPRINT.md">BLUEPRINT.md</a>.</div>
+  <div class="status-line" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.88rem;color:var(--muted)"><span class="pill partial">Draft</span>Written by Anastasia, updated with the review points of 23 November. "Today" means the code on <code>main</code> (16 November). Planned parts still need building and acceptance tests. Technical version: <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/design/BLUEPRINT.md">BLUEPRINT.md</a>.</div>
 </div>
 
 <section id="workflow" aria-labelledby="h-wf">
@@ -547,10 +547,10 @@ svg.diagram .nope text { fill: var(--bad); }
 
 <section id="sequence" aria-labelledby="h-seq">
   <div class="section-head"><span class="num">08 · What comes next</span><h2 id="h-seq">Delivery sequence</h2>
-    <p>The phases, owners and test gates are in the <a href="../planning/BUILD-PLAN.html">build plan</a>.</p></div>
+    <p>The phases, owners and test gates are in the <a href="BUILD-PLAN.html">build plan</a>.</p></div>
   <ol class="seq" id="seq">
     <li><p><strong>Review with the supervisor:</strong> scope, business rules, the data format and who owns MCP.</p></li>
-    <li><p><strong>Freeze the test data</strong> and label the 30-to-50-sentence evaluation set.</p></li>
+    <li><p><strong>Freeze the test data</strong> and label the sentences: an accuracy set of at least 50 complete sales descriptions, plus a separate set of edge cases.</p></li>
     <li><p><strong>Traceability and approval checks:</strong> the missing link, one approval per request, safe retries.</p></li>
     <li><p><strong>Build the MCP connection</strong> on the shared service and test it with an external assistant.</p></li>
     <li><p><strong>Measure:</strong> matching precision and recall, confidence levels, whole-order accuracy and entry time.</p></li>
@@ -857,16 +857,17 @@ const PATHS = [
   { k: "Odoo says no", n: ["s-rec", "s-chk", "s-wait", "s-cre", "s-fail"], e: ["t-rc", "t-cw", "t-wcr", "t-crf", "l-wcr"], c: "Failed: Odoo refused; you see a short, readable error." },
 ];
 const svgS = document.getElementById("states-svg");
+let pathTok = 0;   // ignore highlight timers from an earlier click
 document.getElementById("state-controls").innerHTML = `<button type="button" class="chip" data-i="-1" aria-pressed="true">All paths</button>` + PATHS.map((p, i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="false">${esc(p.k)}</button>`).join("");
 document.getElementById("state-controls").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
-  const i = +b.dataset.i;
+  const i = +b.dataset.i, tok = ++pathTok;
   document.querySelectorAll("#state-controls button").forEach(x => x.setAttribute("aria-pressed", x === b));
   svgS.querySelectorAll(".on").forEach(x => x.classList.remove("on"));
   if (i < 0) { svgS.classList.remove("tracing"); document.getElementById("state-caption").textContent = "All possible paths. Pick a situation above to follow one."; return; }
   svgS.classList.add("tracing");
   const p = PATHS[i];
-  [...p.n, ...p.e].forEach((id, j) => { const el = svgS.querySelector("#" + id); if (!el) return; if (REDUCED || !window.Motion) el.classList.add("on"); else setTimeout(() => el.classList.add("on"), j * 90); });
+  [...p.n, ...p.e].forEach((id, j) => { const el = svgS.querySelector("#" + id); if (!el) return; if (REDUCED || !window.Motion) el.classList.add("on"); else setTimeout(() => { if (tok === pathTok) el.classList.add("on"); }, j * 90); });
   document.getElementById("state-caption").textContent = p.c;
 });
 
