@@ -70,6 +70,40 @@ Floyd owns ERP/backend validation and persistence. Marija owns AI extraction and
 
 Confirm the MCP workflow, meaning of draft approval versus later posting, matching confidence method, applicable Odoo pricing rules, identity requirements and the supervisor's intended blueprint format.
 
+## Proposed marketing extension — campaign attribution for sales
+
+Status — Optional extension for team and supervisor approval. Implementation and field availability need verification.
+
+Sales staff can record the campaign or channel that led to a sale in the same chat request. Marketing staff can then inspect which campaigns are associated with confirmed orders and their order value. This connects marketing activity with the existing sales-entry workflow.
+
+Example input is “Create a sales order for Pepsi with 3 Chair from our Instagram Spring Office campaign.” The approval card shows the customer, products, quantities, Odoo prices, channel and campaign. After approval, the attribution is stored with the draft sales order.
+
+### Users and value
+
+Sales staff record the source while entering the transaction. A marketing coordinator uses the resulting data to compare campaign-associated orders. Managers can identify missing source information and decide where further investigation is needed.
+
+### Requirements and acceptance criteria
+
+| ID | Requirement | Acceptance criterion |
+| --- | --- | --- |
+| M1 | Capture optional source details | Extract a campaign and channel only when the operator supplies them. A request without source information can continue with attribution marked unknown |
+| M2 | Resolve campaign and channel names | Match supplied names to an agreed campaign/channel list. Ask the operator when several entries match or no approved entry exists |
+| M3 | Review attribution | Display the resolved campaign and channel before creation. The operator can reject and resubmit a corrected request |
+| M4 | Preserve attribution | Save and read back the selected attribution against the created sales order. Verify suitable Odoo fields and backend permissions before implementation |
+| M5 | Support a small marketing readout | Provide an agreed Odoo view or export showing confirmed-order count, order value before tax and unknown-source share by campaign for a selected date range |
+
+### Measurement rules
+
+Use synthetic campaigns and sales for the demonstration. Define one operator-reported campaign per order and document the date range and currency used. Report drafts separately from confirmed orders. Confirmed-order value represents orders associated with a campaign. Recognised revenue requires an agreed accounting definition and additional invoice/payment data.
+
+Treat this as operator-reported attribution. It does not establish that a campaign caused a sale. ROI, ROAS and conversion rates require campaign spend or exposure/lead data that the current project does not collect.
+
+### Suggested demonstration and tests
+
+Use two synthetic campaigns, such as Spring Office and Summer Office, and an agreed list of channels. Test an explicit source, an omitted source, an ambiguous campaign, a corrected request and saved attribution after approval. Check that rejection creates no attributed order. Compare a small readout with the underlying confirmed orders.
+
+Anastasia can draft campaign examples, expected outcomes and the marketing readout definition for the team to review. Floyd and Marija should confirm the field mapping, extraction changes and review-card changes. Implement after the core charter acceptance work unless the supervisor agrees a revised priority.
+
 ## Sources
 
 - Project charter supplied to the team, especially deliverables and definition of done.
