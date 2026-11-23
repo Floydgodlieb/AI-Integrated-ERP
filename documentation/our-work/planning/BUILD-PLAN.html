@@ -116,6 +116,129 @@ footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(
 .chart .domain { stroke: var(--line); }
 .chart .tick line { stroke: var(--line); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+.stack-demo { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr); gap: 0; padding: 0; overflow: hidden; }
+@media (max-width: 860px) { .stack-demo { grid-template-columns: 1fr; } }
+.stack-canvas { position: relative; min-height: 440px; background: radial-gradient(120% 90% at 30% 20%, var(--accent-soft), var(--panel) 70%); border-right: 1px solid var(--line); }
+.stack-canvas canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
+.stack-canvas canvas:active { cursor: grabbing; }
+.stack-fallback { position: absolute; inset: 0; display: none; place-items: center; padding: 24px; color: var(--muted); text-align: center; }
+.stack-canvas.no-3d .stack-fallback { display: grid; }
+.stack-hint { position: absolute; left: 14px; bottom: 12px; font-size: .78rem; color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 3px 8px; border-radius: 6px; }
+.steps { padding: 18px; display: grid; gap: 12px; align-content: start; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; counter-reset: step; max-height: 330px; overflow-y: auto; }
+.steps li button { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: .9rem; line-height: 1.4; color: var(--muted); }
+.steps li button:hover { background: var(--accent-soft); }
+.steps li button:focus-visible { outline: 3px solid var(--accent); }
+.steps li button .n { font-family: var(--font-mono); font-size: .8rem; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); }
+.steps li[aria-current="step"] button { background: var(--accent-soft); color: var(--ink); }
+.steps li[aria-current="step"] .n { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.step-now { min-height: 4.5em; padding: 12px 14px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); font-size: .95rem; }
+.step-now .where { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); display: block; margin-bottom: 2px; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+svg.diagram .lbl { paint-order: stroke; stroke: var(--panel); stroke-width: 5px; stroke-linejoin: round; font-size: 12px; fill: var(--ink); }
+svg.diagram .lane { font-size: 12.5px; font-weight: 600; fill: var(--ink); }
+svg.diagram .sub { font-size: 11px; fill: var(--muted); }
+svg.diagram .life { stroke: var(--line); stroke-dasharray: 3 4; }
+svg.diagram .msg { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+svg.diagram .msg.ret { stroke-dasharray: 5 4; }
+svg.diagram .msg.hot { stroke: var(--accent); stroke-width: 2; }
+svg.diagram .box { fill: var(--panel); stroke: var(--line); stroke-width: 1.2; }
+svg.diagram .box.accent { stroke: var(--accent); stroke-width: 1.8; }
+svg.diagram .box.draft { stroke: var(--draft); stroke-width: 1.8; fill: var(--draft-soft); }
+svg.diagram .box.ok { stroke: var(--ok); fill: var(--ok-soft); }
+svg.diagram .box.bad { stroke: var(--bad); fill: var(--bad-soft); }
+svg.diagram .stepno { font-family: var(--font-mono); font-size: 10.5px; fill: var(--accent); }
+svg.diagram .node { transition: opacity .25s; }
+svg.diagram .node rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.3; transition: stroke .25s, fill .25s; }
+svg.diagram .node text { font-size: 12.5px; fill: var(--ink); }
+svg.diagram .node .s { font-size: 11px; fill: var(--muted); }
+svg.diagram .edge { stroke: var(--muted); stroke-width: 1.3; fill: none; transition: stroke .25s, stroke-width .25s; }
+svg.diagram .elbl { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 4px; }
+svg.diagram.tracing .node { opacity: .38; }
+svg.diagram.tracing .node.on { opacity: 1; }
+svg.diagram .node.on rect { stroke: var(--accent); stroke-width: 2.2; fill: var(--accent-soft); }
+svg.diagram .node.end.on rect { stroke: var(--ok); fill: var(--ok-soft); }
+svg.diagram .node.end.stop.on rect { stroke: var(--bad); fill: var(--bad-soft); }
+svg.diagram .node.end.ask.on rect { stroke: var(--draft); fill: var(--draft-soft); }
+svg.diagram .edge.on { stroke: var(--accent); stroke-width: 2.4; }
+.matcher { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .matcher { grid-template-columns: 1fr; } }
+.matcher-form { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; width: max-content; }
+.seg button { border: 0; background: var(--panel); color: var(--ink); padding: 6px 14px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.chat-msg { white-space: pre-wrap; font-size: .93rem; background: var(--paper); border: 1px solid var(--line); border-radius: 10px 10px 10px 2px; padding: 10px 12px; }
+.trace { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+.boundary { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; align-items: stretch; }
+.boundary .panel { display: grid; gap: 10px; align-content: start; }
+.boundary pre { margin: 0; font: .82rem/1.5 var(--font-mono); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.tag { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.chart-card { display: grid; gap: 8px; align-content: start; }
+.chart-card h3 { font-size: 1rem; }
+.chart-card svg { width: 100%; height: auto; overflow: visible; }
+.chart .bar-before { fill: var(--muted); opacity: .55; }
+.chart .bar-after { fill: var(--accent); }
+.chart .val { fill: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.owner { font-weight: 600; }
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.principles .panel { display: grid; gap: 8px; align-content: start; border-top: 4px solid var(--accent); }
+.principles .how { font-size: .9rem; color: var(--muted); }
+.personas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.persona { display: grid; gap: 8px; align-content: start; }
+.persona .says { font-style: italic; color: var(--muted); }
+.persona dl { margin: 0; display: grid; gap: 4px; font-size: .9rem; }
+.persona dt { font-weight: 600; }
+.persona dd { margin: 0 0 6px; color: var(--muted); }
+.demo { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden; }
+@media (max-width: 760px) { .demo { grid-template-columns: 1fr; } }
+.scenarios { border-right: 1px solid var(--line); padding: 14px; display: grid; gap: 6px; align-content: start; background: color-mix(in srgb, var(--paper) 55%, var(--panel)); }
+.scenarios button { all: unset; box-sizing: border-box; cursor: pointer; padding: 9px 11px; border-radius: 8px; font-size: .9rem; line-height: 1.35; display: grid; gap: 2px; }
+.scenarios button small { color: var(--muted); font-size: .78rem; }
+.scenarios button:hover { background: var(--accent-soft); }
+.scenarios button:focus-visible { outline: 3px solid var(--accent); }
+.scenarios button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.scenarios button[aria-pressed="true"] small { color: color-mix(in srgb, var(--paper) 75%, transparent); }
+.chat { display: grid; grid-template-rows: auto 1fr auto; min-height: 520px; }
+.chat-top { padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: .85rem; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.chat-top .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.log { padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 560px; }
+.bubble { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: .94rem; line-height: 1.5; white-space: pre-wrap; }
+.bubble.user { align-self: flex-end; background: var(--accent); color: var(--panel); border-bottom-right-radius: 4px; }
+.bubble.bot { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.bubble.typing { color: var(--muted); font-style: italic; }
+.card { align-self: flex-start; width: min(460px, 92%); border: 2px solid var(--draft); background: var(--panel); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+.card h4 { margin: 0; font: 600 1rem var(--font-display); display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.card .stamp { font: 600 .7rem var(--font-mono); letter-spacing: .08em; color: var(--draft); border: 1.5px solid var(--draft); border-radius: 4px; padding: 1px 6px; }
+.card table { font-size: .88rem; }
+.card td, .card th { padding: 5px 0; border-bottom: 1px dashed var(--line); background: none; }
+.card .total { font-weight: 600; display: flex; justify-content: space-between; }
+.card .fine { font-size: .78rem; color: var(--muted); }
+.card .warn { font-size: .85rem; color: var(--bad); background: var(--bad-soft); border-radius: 6px; padding: 6px 9px; }
+.card .actions { display: flex; gap: 8px; justify-content: flex-end; }
+.replies { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; min-height: 56px; }
+.replies .label { font-size: .82rem; color: var(--muted); margin-right: 4px; }
+.demo-note { font-size: .85rem; color: var(--muted); padding: 10px 16px; border-top: 1px solid var(--line); }
+.status-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .status-grid { grid-template-columns: 1fr; } }
+.donut { display: grid; gap: 10px; justify-items: center; text-align: center; }
+.donut svg { width: 100%; max-width: 260px; height: auto; }
+.donut .legend { display: grid; gap: 6px; justify-items: start; font-size: .9rem; }
+.donut .legend button { all: unset; cursor: pointer; display: flex; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 6px; }
+.donut .legend button:focus-visible { outline: 3px solid var(--accent); }
+.donut .legend button[aria-pressed="true"] { background: var(--accent-soft); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.req-table td:first-child { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.req-table .src { font-size: .78rem; color: var(--muted); display: block; }
+.scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.scope .panel { display: grid; gap: 10px; align-content: start; }
+.steps-h { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; counter-reset: s; }
+.steps-h .panel { display: grid; gap: 6px; align-content: start; position: relative; }
+.steps-h .panel b { font-family: var(--font-mono); color: var(--accent); font-size: .8rem; }
+
 .loop { position: relative; padding: 22px 18px; }
 .loop-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; position: relative; }
 @media (max-width: 760px) { .loop-row { grid-template-columns: 1fr 1fr; } }
@@ -166,17 +289,17 @@ footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(
   <div class="topbar-inner">
     <div class="brand"><span class="brand-mark" aria-hidden="true">AI</span>AI-Integrated ERP · Odoo chat assistant</div>
     <nav class="tabs" aria-label="Project documents">
-      <a href="PRD.html">PRD</a>
-      <a href="BLUEPRINT.html">Blueprint</a>
+      <a href="../design/PRD.html">PRD</a>
+      <a href="../design/BLUEPRINT.html">Blueprint</a>
       <a href="BUILD-PLAN.html" aria-current="page">Build plan</a>
     </nav>
   </div>
 </header>
 <main>
 <div class="hero">
-  <span class="eyebrow">BUILD PLAN · v1.0 · 16 Nov 2026</span>
+  <span class="eyebrow">BUILD PLAN · v1.1 · 23 Nov 2026</span>
   <h1>From hardened V3.1 to a validated product</h1>
-  <p class="lead">Phases with checkboxes. Each phase ends with a test gate; only when the gate passes is the work committed and pushed, so <code>main</code> always works. What we are building: <a href="PRD.html">PRD</a>. How: <a href="BLUEPRINT.html">Blueprint</a>.</p>
+  <p class="lead">Phases with checkboxes. Each phase ends with a test gate; only when the gate passes is the work committed and pushed, so <code>main</code> always works. What we are building: <a href="../design/PRD.html">PRD</a>. How: <a href="../design/BLUEPRINT.html">Blueprint</a>. The order follows the blueprint’s delivery sequence.</p>
   <div class="facts" id="facts"></div>
 </div>
 
@@ -199,7 +322,7 @@ footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(
   <div class="section-head"><span class="num">02 · So far</span><h2 id="h-prog">What happened, and the test count at each gate</h2>
     <p>Dates from the <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/changes/CHANGELOG.md">changelog</a>; test counts from the recorded runs in <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/tests/TEST-RESULTS.md">TEST-RESULTS.md</a>.</p></div>
   <div class="grid-2">
-    <div class="panel timeline"><h3>Milestones, 9–16 Nov 2026</h3><svg id="timeline" viewBox="0 0 520 250" role="img" aria-label="Milestones from the handover on 9 November to PR 8 on 16 November"></svg><ul class="clean note" id="timeline-list"></ul></div>
+    <div class="panel timeline"><h3>Milestones, 9–23 Nov 2026</h3><svg id="timeline" viewBox="0 0 520 250" role="img" aria-label="Milestones from the handover on 9 November to the PRD and blueprint review on 23 November"></svg><ul class="clean note" id="timeline-list"></ul></div>
     <div class="panel runs"><h3>Automated tests passing, per recorded run</h3><svg id="runs" viewBox="0 0 520 250" role="img" aria-label="Tests passing per run: 40, 41, 41, 50, 53, 60, 64"></svg><p class="note">Every run: 0 failed. 40 → 64 tests as features were added. The first run is the hardened backend before the move to V3.1.</p></div>
   </div>
 </section>
@@ -212,7 +335,7 @@ footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(
 </section>
 </main>
 <footer>
-  Build plan v1.0 · 16 Nov 2026 · To update: edit the <code>plan</code> data block at the bottom of this file (set <code>"done": true</code> on a task, or add a phase), then log the change in <code>DECISIONS.md</code> and the <code>CHANGELOG.md</code> entry of your PR.
+  Build plan v1.1 · 23 Nov 2026 · To update: edit the <code>plan</code> data block at the bottom of this file (set <code>"done": true</code> on a task, or add a phase), then log the change in <code>DECISIONS.md</code> and the <code>CHANGELOG.md</code> entry of your PR.
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
@@ -259,33 +382,45 @@ const PLAN = [
     tasks: [["AI suggests one real product; the user confirms", 1, "Floyd"], ["Plain-language not-found message", 1, "Floyd"], ["Search limit clamped to 1–50", 1, "Floyd"]],
     gate: "64 tests pass", evidence: "PR #7" },
   { n: 8, title: "Same sentence, same action", when: "PR #8 · open", owners: ["Floyd", "Marija"], goal: "Stop the same sentence from giving different actions (experiment 13).",
-    tasks: [["AI call at temperature 0", 1, "Floyd"], ["Prompt rule: sell/order → sales order, invoice → invoice, show/find → lookup", 1, "Floyd"], ["CLAUDE.md, PRD, blueprint and this build plan", 1, "Floyd"], ["Re-test \"sell 4 premium chairs to Luther\" 5× with the real llama3.1", 0, "Floyd"], ["Merge PR #8", 0, "Floyd"]],
+    tasks: [["AI call at temperature 0", 1, "Floyd"], ["Prompt rule: sell/order → sales order, invoice → invoice, show/find → lookup", 1, "Floyd"], ["CLAUDE.md; PRD and blueprint 1.1 and this build plan as HTML", 1, "Floyd"], ["Re-test \"sell 4 premium chairs to Luther\" 5× with the real llama3.1", 0, "Floyd"], ["Merge PR #8", 0, "Floyd"]],
     gate: "64 tests pass, and the same sentence gives the same action 5 out of 5 times", evidence: "PR #8; experiment 13" },
-  { n: 9, title: "Real-AI baseline", when: "next", owners: ["Anastasia", "Marija", "Floyd"], goal: "Know how good the real model is, with numbers.",
-    tasks: [["50-prompt test set with expected action and outcome", 0, "Anastasia"], ["Replay with llama3.1 on Floyd's PC, results in the experiment log", 0, "Marija"], ["Same with qwen3:8b; compare % right action and seconds", 0, "Marija"], ["Full Windows run with Setup/run_tests.py", 0, "Floyd"], ["Agree a speed target", 0, "Team"]],
+  { n: 9, title: "Review with the supervisor", when: "next", owners: ["Tijn", "Team"], goal: "Agree on the PRD and blueprint 1.1 before building more.",
+    tasks: [["Review PRD and blueprint 1.1 with the supervisor", 0, "Tijn"], ["Confirm the must / should / could ranking against the charter", 0, "Tijn"], ["Name the MCP owner and pick the assistant and connection type for the demo", 0, "Team"], ["Choose the matching method and confidence level to evaluate", 0, "Team"], ["Decide: list prices only, or customer price lists", 0, "Tijn"], ["Data contract D1–D12 ticked; invoice from an existing sales order: yes or no", 0, "Floyd"]],
+    gate: "Decisions in DECISIONS.md; PRD and blueprint updated if anything changed", evidence: "–" },
+  { n: 10, title: "Test data and evaluation set", when: "next", owners: ["Anastasia", "Tijn"], goal: "A fair, fixed test for the >90% target.",
+    tasks: [["Freeze a reproducible made-up dataset (customers, products, prices)", 0, "Tijn"], ["Accuracy set: 30 complete sales descriptions, then at least 50", 0, "Anastasia"], ["Separate edge-case set: similar names, typos, unknowns, missing quantities, price tricks, approve/reject", 0, "Anastasia"], ["Keep a held-out part aside until the final measurement", 0, "Anastasia"]],
+    gate: "Dataset and labelled sets versioned in the repo", evidence: "–" },
+  { n: 11, title: "Traceability and safe approvals", when: "next", owners: ["Floyd"], goal: "Every draft links back to its request; every approval counts once.",
+    tasks: [["Write the conversation ID into the 'created' audit event (first step)", 0, "Floyd"], ["Request ID across input, matching, approval and Odoo record", 0, "Floyd"], ["Each approval accepted once; check owner and expiry", 0, "Floyd"], ["After a network failure while creating: check Odoo before any retry", 0, "Floyd"], ["Storage that survives a restart", 0, "Floyd"]],
+    gate: "Tests pass, including a test that links a created draft to its request", evidence: "–" },
+  { n: 12, title: "MCP connection", when: "after phase 11", owners: ["Team"], goal: "Another AI assistant can prepare drafts through the same checks; a person still approves.",
+    tasks: [["One shared service for checks, matching, approval and storage, used by chat and MCP", 0, "Floyd"], ["MCP tools: look up, prepare quotation, prepare invoice, check status, cancel", 0, "Team"], ["No approve tool for the AI: approval only by a person", 0, "Team"], ["End-to-end test from an external assistant", 0, "Team"], ["Document the tool schemas", 0, "Anastasia"]],
+    gate: "A draft sale prepared from an external assistant and approved by a person; chat tests still pass", evidence: "–" },
+  { n: 13, title: "Measurement", when: "after phases 10–12", owners: ["Marija", "Anastasia", "Floyd"], goal: "Prove the targets with numbers.",
+    tasks: [["Same sentence 5× gives the same action (real model)", 0, "Marija"], ["Replay the accuracy set with llama3.1 and qwen3:8b", 0, "Marija"], ["Matching precision, recall and confidence levels", 0, "Anastasia"], ["Whole-order accuracy: at least 46 of 50", 0, "Anastasia"], ["Entry time by hand vs with the assistant; cold and warm model", 0, "Anastasia"], ["Full Windows test run with Setup/run_tests.py", 0, "Floyd"]],
     gate: "Results in EXPERIMENT-LOG.md and TEST-RESULTS.md", evidence: "–" },
-  { n: 10, title: "Entrepreneur validation", when: "next", owners: ["Tijn", "Team"], goal: "Find out whether business owners want this before building more.",
-    tasks: [["Demo script with three scenarios (clean invoice, ambiguous customer, refused request)", 0, "Tijn"], ["List of entrepreneurs to approach, in person and via LinkedIn", 0, "Tijn"], ["Hold the demos", 0, "Team"], ["Feedback in the experiment log", 0, "Anastasia"], ["PRD changes logged in DECISIONS.md", 0, "Tijn"]],
+  { n: 14, title: "Entrepreneur validation", when: "in parallel", owners: ["Tijn", "Team"], goal: "Find out whether business owners want this before building more.",
+    tasks: [["Demo script with three scenarios (clear order, unclear customer, refused request)", 0, "Tijn"], ["List of entrepreneurs to approach, in person and via LinkedIn", 0, "Tijn"], ["Hold the demos", 0, "Team"], ["Feedback in the experiment log", 0, "Anastasia"], ["PRD changes logged in DECISIONS.md", 0, "Tijn"]],
     gate: "Findings written down; PRD confirmed or changed", evidence: "–" },
-  { n: 11, title: "Open decisions", when: "next", owners: ["Floyd", "Marija", "Tijn"], goal: "Settle what the AI may send and what comes after v1.",
-    tasks: [["Data contract D1–D12 ticked", 0, "Floyd"], ["Invoice from an existing sales order: yes or no", 0, "Team"], ["New customers via the chat (D5)", 0, "Tijn"], ["When to start V4 on the data contract", 0, "Team"]],
-    gate: "DECISIONS.md and DATA-CONTRACT.md updated", evidence: "–" },
-  { n: 12, title: "Chat polish", when: "next", owners: ["Marija", "Floyd"], goal: "Clear messages for the cases the real AI showed.",
+  { n: 15, title: "Chat polish", when: "in parallel", owners: ["Marija", "Floyd"], goal: "Clear messages for the cases the real AI showed.",
     tasks: [["Questions shown once, without the \"I couldn't complete the request:\" prefix", 0, "Marija"], ["Show Odoo's record name (e.g. S00003) after creating", 0, "Floyd"]],
     gate: "Tests pass; npm run lint && npm run build; manual checklist rows 5–7", evidence: "–" },
-  { n: 13, title: "Housekeeping and security", when: "next", owners: ["Floyd", "Tijn"], goal: "Close the loose ends from the handover.",
-    tasks: [["Previous group revokes the leaked Odoo password and Teams webhook", 0, "Tijn"], ["Protect main: every change via a reviewed PR", 0, "Floyd"], ["Delete merged branches", 0, "Floyd"], ["Supervisor can read the repository", 0, "Floyd"]],
+  { n: 16, title: "Housekeeping and security", when: "in parallel", owners: ["Floyd", "Tijn"], goal: "Close the loose ends from the handover.",
+    tasks: [["Previous group revokes the leaked Odoo password and Teams webhook", 0, "Tijn"], ["Protect main: every change via a reviewed PR", 0, "Floyd"], ["Delete merged branches", 0, "Floyd"], ["Supervisor can read the repository", 0, "Floyd"], ["Project charter (or a summary) added to the repo", 0, "Tijn"]],
     gate: "Checked off in this plan", evidence: "–" },
-  { n: 14, title: "Freeze and presentation", when: "2 weeks before the presentation", owners: ["Team"], goal: "A demo that works on the day.",
-    tasks: [["Feature freeze; tag a release", 0, "Team"], ["Setup from scratch on a clean machine", 0, "Anastasia"], ["Backup demo video", 0, "Anastasia"], ["Three timed rehearsals", 0, "Team"]],
-    gate: "Clean-machine setup works; video recorded", evidence: "–" },
+  { n: 17, title: "Log-in and roles (could)", when: "before real customer data", owners: ["Floyd"], goal: "Only known operators can approve; sessions stay apart.",
+    tasks: [["Design: who may approve what", 0, "Team"], ["Log-in; approvals tied to the operator", 0, "Floyd"], ["Test: one operator cannot approve another's draft", 0, "Floyd"]],
+    gate: "Tests pass, including the cross-operator test", evidence: "–" },
+  { n: 18, title: "Freeze and presentation", when: "2 weeks before the presentation", owners: ["Team"], goal: "A demo that works on the day.",
+    tasks: [["Feature freeze; tag a release", 0, "Team"], ["Repeat approve, reject, unclear name, prices and two sessions on the final version", 0, "Anastasia"], ["Setup from scratch on a clean machine", 0, "Anastasia"], ["Save versioned evidence; backup demo video", 0, "Anastasia"], ["Three timed rehearsals", 0, "Team"]],
+    gate: "Final-version checks pass; clean-machine setup works; video recorded", evidence: "–" },
 ];
 // ---- end of the plan ----
 
 const MILESTONES = [
   { d: "2026-11-09", t: "Handover report" }, { d: "2026-11-10", t: "Odoo 20 set up; first real-AI test" },
   { d: "2026-11-12", t: "PR #1–#3: hardening, V3.1, docs" }, { d: "2026-11-14", t: "Structured AI actions and chat" },
-  { d: "2026-11-16", t: "PR #5–#7 merged; PR #8 open", open: true },
+  { d: "2026-11-16", t: "PR #5–#7 merged; PR #8 open" }, { d: "2026-11-23", t: "PRD and blueprint 1.1; review", open: true },
 ];
 const RUNS = [
   { k: "12 Nov · b17d27a", v: 40 }, { k: "12 Nov · 69e5f4f", v: 41 }, { k: "12 Nov · 4751804", v: 41 },
@@ -346,7 +481,7 @@ safely("timeline", () => {
   if (!window.d3) return;
   document.getElementById("timeline-list").style.display = "none";
   const svg = d3.select("#timeline"), W = 520, m = { l: 24, r: 24 };
-  const x = d3.scaleTime().domain([new Date("2026-11-08T12:00"), new Date("2026-11-16T12:00")]).range([m.l, W - m.r]);
+  const x = d3.scaleTime().domain([new Date("2026-11-08T12:00"), new Date("2026-11-23T12:00")]).range([m.l, W - m.r]);
   svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", 70).attr("y2", 70).attr("stroke", css("--line")).attr("stroke-width", 2);
   svg.append("g").attr("class", "chart").attr("transform", "translate(0,70)").call(d3.axisBottom(x).ticks(d3.timeDay.every(1)).tickFormat(d3.timeFormat("%-d")).tickSize(6)).call(g => g.select(".domain").remove());
   const ms = svg.selectAll(".ms").data(MILESTONES).join("g").attr("class", d => "ms" + (d.open ? " open" : ""))

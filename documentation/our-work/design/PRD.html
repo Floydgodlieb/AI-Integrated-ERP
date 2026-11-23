@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRD – AI-Integrated ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a working engineering document. Left-aligned column, ledger-style tables,
+   one cobalt accent for "the path a request takes", amber only for "draft" things. */
+:root {
+  --paper: #f3f5f8;
+  --panel: #ffffff;
+  --ink: #14213d;
+  --muted: #586378;
+  --line: #d8dee8;
+  --accent: #1f55e0;
+  --accent-soft: #e3eafc;
+  --draft: #a86b00;
+  --draft-soft: #fbf0d9;
+  --ok: #17734a;
+  --ok-soft: #dcf1e6;
+  --warn: #9a5b00;
+  --bad: #b42318;
+  --bad-soft: #fbe3e1;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d121b; --panel: #151c28; --ink: #e5eaf2; --muted: #9aa6b8; --line: #263145;
+    --accent: #7ea2ff; --accent-soft: #1b2847; --draft: #f0b54a; --draft-soft: #33270f;
+    --ok: #56c98f; --ok-soft: #12301f; --warn: #f0b54a; --bad: #ff8a80; --bad-soft: #3a1714;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d121b; --panel: #151c28; --ink: #e5eaf2; --muted: #9aa6b8; --line: #263145;
+  --accent: #7ea2ff; --accent-soft: #1b2847; --draft: #f0b54a; --draft-soft: #33270f;
+  --ok: #56c98f; --ok-soft: #12301f; --warn: #f0b54a; --bad: #ff8a80; --bad-soft: #3a1714;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--accent-soft); padding: .08em .35em; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 4.5vw, 3rem); letter-spacing: -.01em; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.12rem; }
+p { margin: 0; max-width: 68ch; }
+.topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; margin-right: auto; display: flex; gap: 10px; align-items: center; }
+.brand-mark { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: var(--panel); display: grid; place-items: center; font-size: .8rem; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs a { text-decoration: none; color: var(--muted); padding: 6px 12px; border-radius: 999px; font-weight: 500; font-size: .92rem; }
+.tabs a[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.tabs a:hover:not([aria-current]) { background: var(--accent-soft); color: var(--ink); }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 80px; display: grid; gap: 56px; }
+.hero { display: grid; gap: 16px; padding-top: 12px; }
+.eyebrow { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); letter-spacing: .02em; }
+.lead { font-size: 1.12rem; color: var(--muted); max-width: 70ch; }
+section { display: grid; gap: 18px; scroll-margin-top: 70px; }
+.section-head { display: grid; gap: 6px; }
+.section-head .num { font-family: var(--font-mono); color: var(--accent); font-size: .85rem; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.fact { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 2px; }
+.fact b { font-family: var(--font-display); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.fact span { color: var(--muted); font-size: .9rem; line-height: 1.35; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; background: color-mix(in srgb, var(--paper) 60%, var(--panel)); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.done { background: var(--ok-soft); color: var(--ok); }
+.pill.partial { background: var(--draft-soft); color: var(--draft); }
+.pill.open { background: var(--accent-soft); color: var(--accent); }
+.pill.out { background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+button, .chip { font: inherit; cursor: pointer; }
+.chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 5px 12px; border-radius: 999px; font-size: .88rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip:hover { border-color: var(--accent); }
+.btn { border: 0; background: var(--accent); color: var(--panel); padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+.btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn:disabled { opacity: .45; cursor: default; }
+.note { font-size: .88rem; color: var(--muted); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+figure { margin: 0; display: grid; gap: 10px; }
+figcaption { font-size: .88rem; color: var(--muted); max-width: 75ch; }
+svg.diagram { width: 100%; height: auto; color: var(--ink); font-family: var(--font-body); }
+.diagram-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.diagram-wrap svg { min-width: 640px; }
+.callout { border-left: 4px solid var(--draft); background: var(--draft-soft); padding: 12px 16px; border-radius: 0 var(--radius) var(--radius) 0; }
+.callout p { max-width: none; }
+ul.clean { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+.chart text { fill: var(--muted); font-family: var(--font-body); font-size: 12px; }
+.chart .grid line { stroke: var(--line); }
+.chart .domain { stroke: var(--line); }
+.chart .tick line { stroke: var(--line); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+.stack-demo { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr); gap: 0; padding: 0; overflow: hidden; }
+@media (max-width: 860px) { .stack-demo { grid-template-columns: 1fr; } }
+.stack-canvas { position: relative; min-height: 440px; background: radial-gradient(120% 90% at 30% 20%, var(--accent-soft), var(--panel) 70%); border-right: 1px solid var(--line); }
+.stack-canvas canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
+.stack-canvas canvas:active { cursor: grabbing; }
+.stack-fallback { position: absolute; inset: 0; display: none; place-items: center; padding: 24px; color: var(--muted); text-align: center; }
+.stack-canvas.no-3d .stack-fallback { display: grid; }
+.stack-hint { position: absolute; left: 14px; bottom: 12px; font-size: .78rem; color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 3px 8px; border-radius: 6px; }
+.steps { padding: 18px; display: grid; gap: 12px; align-content: start; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; counter-reset: step; max-height: 330px; overflow-y: auto; }
+.steps li button { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: .9rem; line-height: 1.4; color: var(--muted); }
+.steps li button:hover { background: var(--accent-soft); }
+.steps li button:focus-visible { outline: 3px solid var(--accent); }
+.steps li button .n { font-family: var(--font-mono); font-size: .8rem; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); }
+.steps li[aria-current="step"] button { background: var(--accent-soft); color: var(--ink); }
+.steps li[aria-current="step"] .n { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.step-now { min-height: 4.5em; padding: 12px 14px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); font-size: .95rem; }
+.step-now .where { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); display: block; margin-bottom: 2px; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+svg.diagram .lbl { paint-order: stroke; stroke: var(--panel); stroke-width: 5px; stroke-linejoin: round; font-size: 12px; fill: var(--ink); }
+svg.diagram .lane { font-size: 12.5px; font-weight: 600; fill: var(--ink); }
+svg.diagram .sub { font-size: 11px; fill: var(--muted); }
+svg.diagram .life { stroke: var(--line); stroke-dasharray: 3 4; }
+svg.diagram .msg { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+svg.diagram .msg.ret { stroke-dasharray: 5 4; }
+svg.diagram .msg.hot { stroke: var(--accent); stroke-width: 2; }
+svg.diagram .box { fill: var(--panel); stroke: var(--line); stroke-width: 1.2; }
+svg.diagram .box.accent { stroke: var(--accent); stroke-width: 1.8; }
+svg.diagram .box.draft { stroke: var(--draft); stroke-width: 1.8; fill: var(--draft-soft); }
+svg.diagram .box.ok { stroke: var(--ok); fill: var(--ok-soft); }
+svg.diagram .box.bad { stroke: var(--bad); fill: var(--bad-soft); }
+svg.diagram .stepno { font-family: var(--font-mono); font-size: 10.5px; fill: var(--accent); }
+svg.diagram .node { transition: opacity .25s; }
+svg.diagram .node rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.3; transition: stroke .25s, fill .25s; }
+svg.diagram .node text { font-size: 12.5px; fill: var(--ink); }
+svg.diagram .node .s { font-size: 11px; fill: var(--muted); }
+svg.diagram .edge { stroke: var(--muted); stroke-width: 1.3; fill: none; transition: stroke .25s, stroke-width .25s; }
+svg.diagram .elbl { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 4px; }
+svg.diagram.tracing .node { opacity: .38; }
+svg.diagram.tracing .node.on { opacity: 1; }
+svg.diagram .node.on rect { stroke: var(--accent); stroke-width: 2.2; fill: var(--accent-soft); }
+svg.diagram .node.end.on rect { stroke: var(--ok); fill: var(--ok-soft); }
+svg.diagram .node.end.stop.on rect { stroke: var(--bad); fill: var(--bad-soft); }
+svg.diagram .node.end.ask.on rect { stroke: var(--draft); fill: var(--draft-soft); }
+svg.diagram .edge.on { stroke: var(--accent); stroke-width: 2.4; }
+.matcher { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .matcher { grid-template-columns: 1fr; } }
+.matcher-form { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; width: max-content; }
+.seg button { border: 0; background: var(--panel); color: var(--ink); padding: 6px 14px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.chat-msg { white-space: pre-wrap; font-size: .93rem; background: var(--paper); border: 1px solid var(--line); border-radius: 10px 10px 10px 2px; padding: 10px 12px; }
+.trace { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+.boundary { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; align-items: stretch; }
+.boundary .panel { display: grid; gap: 10px; align-content: start; }
+.boundary pre { margin: 0; font: .82rem/1.5 var(--font-mono); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.tag { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.chart-card { display: grid; gap: 8px; align-content: start; }
+.chart-card h3 { font-size: 1rem; }
+.chart-card svg { width: 100%; height: auto; overflow: visible; }
+.chart .bar-before { fill: var(--muted); opacity: .55; }
+.chart .bar-after { fill: var(--accent); }
+.chart .val { fill: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.owner { font-weight: 600; }
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.principles .panel { display: grid; gap: 8px; align-content: start; border-top: 4px solid var(--accent); }
+.principles .how { font-size: .9rem; color: var(--muted); }
+.personas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.persona { display: grid; gap: 8px; align-content: start; }
+.persona .says { font-style: italic; color: var(--muted); }
+.persona dl { margin: 0; display: grid; gap: 4px; font-size: .9rem; }
+.persona dt { font-weight: 600; }
+.persona dd { margin: 0 0 6px; color: var(--muted); }
+.demo { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden; }
+@media (max-width: 760px) { .demo { grid-template-columns: 1fr; } }
+.scenarios { border-right: 1px solid var(--line); padding: 14px; display: grid; gap: 6px; align-content: start; background: color-mix(in srgb, var(--paper) 55%, var(--panel)); }
+.scenarios button { all: unset; box-sizing: border-box; cursor: pointer; padding: 9px 11px; border-radius: 8px; font-size: .9rem; line-height: 1.35; display: grid; gap: 2px; }
+.scenarios button small { color: var(--muted); font-size: .78rem; }
+.scenarios button:hover { background: var(--accent-soft); }
+.scenarios button:focus-visible { outline: 3px solid var(--accent); }
+.scenarios button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.scenarios button[aria-pressed="true"] small { color: color-mix(in srgb, var(--paper) 75%, transparent); }
+.chat { display: grid; grid-template-rows: auto 1fr auto; min-height: 520px; }
+.chat-top { padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: .85rem; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.chat-top .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.log { padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 560px; }
+.bubble { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: .94rem; line-height: 1.5; white-space: pre-wrap; }
+.bubble.user { align-self: flex-end; background: var(--accent); color: var(--panel); border-bottom-right-radius: 4px; }
+.bubble.bot { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.bubble.typing { color: var(--muted); font-style: italic; }
+.card { align-self: flex-start; width: min(460px, 92%); border: 2px solid var(--draft); background: var(--panel); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+.card h4 { margin: 0; font: 600 1rem var(--font-display); display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.card .stamp { font: 600 .7rem var(--font-mono); letter-spacing: .08em; color: var(--draft); border: 1.5px solid var(--draft); border-radius: 4px; padding: 1px 6px; }
+.card table { font-size: .88rem; }
+.card td, .card th { padding: 5px 0; border-bottom: 1px dashed var(--line); background: none; }
+.card .total { font-weight: 600; display: flex; justify-content: space-between; }
+.card .fine { font-size: .78rem; color: var(--muted); }
+.card .warn { font-size: .85rem; color: var(--bad); background: var(--bad-soft); border-radius: 6px; padding: 6px 9px; }
+.card .actions { display: flex; gap: 8px; justify-content: flex-end; }
+.replies { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; min-height: 56px; }
+.replies .label { font-size: .82rem; color: var(--muted); margin-right: 4px; }
+.demo-note { font-size: .85rem; color: var(--muted); padding: 10px 16px; border-top: 1px solid var(--line); }
+.status-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .status-grid { grid-template-columns: 1fr; } }
+.donut { display: grid; gap: 10px; justify-items: center; text-align: center; }
+.donut svg { width: 100%; max-width: 260px; height: auto; }
+.donut .legend { display: grid; gap: 6px; justify-items: start; font-size: .9rem; }
+.donut .legend button { all: unset; cursor: pointer; display: flex; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 6px; }
+.donut .legend button:focus-visible { outline: 3px solid var(--accent); }
+.donut .legend button[aria-pressed="true"] { background: var(--accent-soft); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.req-table td:first-child { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.req-table .src { font-size: .78rem; color: var(--muted); display: block; }
+.scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.scope .panel { display: grid; gap: 10px; align-content: start; }
+.steps-h { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; counter-reset: s; }
+.steps-h .panel { display: grid; gap: 6px; align-content: start; position: relative; }
+.steps-h .panel b { font-family: var(--font-mono); color: var(--accent); font-size: .8rem; }
+
+.hero-wrap { display: grid; gap: 18px; }
+.hero-canvas { position: relative; height: 300px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(90% 120% at 50% 0%, var(--accent-soft), var(--panel) 75%); }
+.hero-canvas canvas { width: 100%; height: 100%; display: block; }
+.hero-canvas.no-3d { display: none; }
+.three-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 700px) { .three-steps { grid-template-columns: 1fr; } }
+.three-steps .panel { display: grid; gap: 4px; padding: 14px 16px; }
+.three-steps b { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); }
+.status-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .88rem; color: var(--muted); }
+details.dev { border: 1px dashed var(--line); border-radius: 10px; background: color-mix(in srgb, var(--paper) 50%, var(--panel)); }
+details.dev summary { cursor: pointer; padding: 9px 14px; font-size: .85rem; font-weight: 600; color: var(--muted); list-style: none; display: flex; gap: 8px; align-items: center; }
+details.dev summary::-webkit-details-marker { display: none; }
+details.dev summary::before { content: "›"; font-size: 1.1rem; transition: transform .2s; }
+details.dev[open] summary::before { transform: rotate(90deg); }
+details.dev > div { padding: 2px 16px 14px; display: grid; gap: 10px; font-size: .9rem; }
+.compare { display: grid; gap: 10px; }
+.compare .row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 70px; gap: 10px; align-items: center; font-size: .92rem; }
+.compare .track { height: 22px; background: var(--paper); border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.compare .fill { height: 100%; border-radius: 5px; }
+.people { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.people .panel { display: grid; gap: 6px; align-content: start; }
+.people .need { font-size: .9rem; }
+.people .duty { font-size: .85rem; color: var(--muted); }
+.stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.story { display: grid; gap: 8px; align-content: start; position: relative; }
+.story .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.story .id { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); }
+.story .want { font-family: var(--font-display); font-size: 1.08rem; line-height: 1.3; }
+.story .ok-when { font-size: .9rem; }
+.story .ok-when b { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; display: block; }
+.prio { font: 600 .72rem var(--font-mono); letter-spacing: .05em; padding: 2px 8px; border-radius: 4px; border: 1.5px solid currentColor; }
+.prio.must { color: var(--bad); } .prio.should { color: var(--draft); } .prio.could { color: var(--muted); }
+.progress { display: flex; height: 14px; border-radius: 99px; overflow: hidden; border: 1px solid var(--line); }
+.progress span { display: block; height: 100%; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; counter-reset: rule; }
+.rule { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; }
+.rule .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 .85rem var(--font-mono); display: grid; place-items: center; }
+.rule.new .n { background: var(--draft-soft); color: var(--draft); }
+.rule p { font-size: .93rem; }
+.waffle-wrap { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 18px; align-items: center; }
+@media (max-width: 800px) { .waffle-wrap { grid-template-columns: 1fr; } }
+.waffle { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; max-width: 420px; }
+.waffle i { aspect-ratio: 1; border-radius: 4px; background: var(--ok); display: block; }
+.waffle i.spare { background: var(--draft); }
+.legend-row { display: flex; gap: 14px; flex-wrap: wrap; font-size: .88rem; }
+.legend-row span { display: inline-flex; gap: 6px; align-items: center; }
+.risk { display: grid; gap: 10px; align-content: start; border-top: 4px solid var(--bad); }
+.dod { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.dod .panel { display: grid; gap: 10px; align-content: start; }
+.dod .must-col { border-top: 4px solid var(--bad); } .dod .should-col { border-top: 4px solid var(--draft); } .dod .could-col { border-top: 4px solid var(--muted); }
+.questions { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">AI</span>AI-Integrated ERP · Odoo chat assistant</div>
+    <nav class="tabs" aria-label="Project documents">
+      <a href="PRD.html" aria-current="page">PRD</a>
+      <a href="BLUEPRINT.html">Blueprint</a>
+      <a href="../planning/BUILD-PLAN.html">Build plan</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="hero hero-wrap">
+  <span class="eyebrow">PRODUCT REQUIREMENTS · version 1.1 · 23 November 2026 · draft for team and supervisor review</span>
+  <h1>Type what you sold. Check it. Odoo gets a draft.</h1>
+  <p class="lead">Sales and admin staff lose time clicking through ERP screens and typing the same details again. With this assistant they describe a sale in plain English, check the customer, products, quantities and Odoo prices, and approve. Only then is a <strong>draft</strong> created in Odoo. Odoo stays the official record.</p>
+  <div class="hero-canvas" id="hero-canvas"></div>
+  <div class="three-steps" id="three-steps">
+    <div class="panel"><b>1 · YOU TYPE</b><span>"Create a sales order for Pepsi with 3 Chair"</span></div>
+    <div class="panel"><b>2 · YOU CHECK</b><span>Pepsi · Chair × 3 at 50.00 · 150.00 before tax · Approve or Reject</span></div>
+    <div class="panel"><b>3 · ODOO GETS</b><span>A draft quotation. Nothing is confirmed or posted.</span></div>
+  </div>
+  <div class="status-line"><span class="pill partial">Draft</span>Written by Anastasia, updated with the review points of 23 November. Status refers to the code on <code>main</code> (16 November) plus open pull request #8. Technical version: <a href="PRD.md">PRD.md</a>.</div>
+</div>
+
+<section id="why" aria-labelledby="h-why">
+  <div class="section-head"><span class="num">01 · Why</span><h2 id="h-why">The goal: from minutes to seconds, without losing control</h2>
+    <p>The project charter sets a target: entering a sale should drop from roughly three minutes to thirty seconds. That is a target, not a measurement yet. Reliable matching, visible human control and records you can trace back matter as much as speed.</p></div>
+  <div class="panel compare" id="target">
+    <div class="row"><span>Typing it into Odoo</span><div class="track"><div class="fill" style="width:100%;background:var(--muted);opacity:.5"></div></div><span class="mono">~3 min</span></div>
+    <div class="row"><span>With the assistant</span><div class="track"><div class="fill" style="width:16.7%;background:var(--accent)"></div></div><span class="mono">30 s</span></div>
+    <p class="note">Both numbers are the charter's target, not yet measured. They will be measured with the same transactions, entered by hand and with the assistant.</p>
+  </div>
+</section>
+
+<section id="people" aria-labelledby="h-people">
+  <div class="section-head"><span class="num">02 · People</span><h2 id="h-people">Who it is for, and who is responsible for what</h2>
+    <p>The AI and Odoo are tools. People stay responsible: for checking records, for access rights, and for how customer information is handled.</p></div>
+  <div class="people" id="people-grid">
+    <div class="panel"><h3>Sales and admin staff</h3><p class="need">Want simple entry, correct details and errors they understand.</p><p class="duty">We provide guidance, a readable approval card and a way to correct a request.</p></div>
+    <div class="panel"><h3>Companies and managers</h3><p class="need">Want time savings, information they can trust, and reasonable costs.</p><p class="duty">We measure results; they keep the Odoo setup and access rights in order.</p></div>
+    <div class="panel"><h3>Customers</h3><p class="need">Want correct orders and invoices, and their information handled properly.</p><p class="duty">Records are checked before saving and errors are corrected quickly.</p></div>
+    <div class="panel"><h3>Partners and suppliers</h3><p class="need">Want accurate information where it affects them.</p><p class="duty">The MVP is limited to the agreed sales workflow.</p></div>
+    <div class="panel"><h3>Project team and supervisor</h3><p class="need">Want a bounded, testable result with evidence anyone can inspect.</p><p class="duty">Version control, documentation and evaluation records.</p></div>
+    <div class="panel"><h3>Security and compliance</h3><p class="need">Want controlled access and accountable changes.</p><p class="duty">Made-up test data only, a restricted Odoo account, traceable actions. Rules for real transactions must be reviewed by the organisation first.</p></div>
+  </div>
+</section>
+
+<section id="scope" aria-labelledby="h-scope">
+  <div class="section-head"><span class="num">03 · Scope</span><h2 id="h-scope">What the first version does, and what it does not</h2></div>
+  <div class="scope">
+    <div class="panel"><span class="pill done">In</span>
+      <ul class="clean">
+        <li><strong>Main flow:</strong> describe a sale → a draft quotation in Odoo</li>
+        <li>Draft customer invoices (already in the prototype)</li>
+        <li>Looking up customers, products, sales orders and invoices</li>
+        <li>Asking back when a name is unclear, and a review before saving</li>
+        <li><strong>MCP:</strong> another AI assistant can use the same workflow (required by the charter, not built yet)</li>
+      </ul></div>
+    <div class="panel"><span class="pill out">Out</span>
+      <ul class="clean">
+        <li>Confirming sales orders or posting invoices</li>
+        <li>Deleting records</li>
+        <li>Payments, forecasting, manufacturing and production control</li>
+        <li>A full conversational product</li>
+      </ul></div>
+    <div class="panel"><span class="pill open">Maybe later</span>
+      <ul class="clean">
+        <li>The charter allows expense logging as an alternative flow. This plan picks sales and customer invoicing first.</li>
+        <li>Supplier bills need a separately agreed change of scope.</li>
+      </ul></div>
+  </div>
+  <p class="note">The React chat screen is for development and demonstrations. The charter asks for MCP so that an external AI assistant can use the workflow too.</p>
+</section>
+
+<section id="stories" aria-labelledby="h-stories">
+  <div class="section-head"><span class="num">04 · User stories</span><h2 id="h-stories">Eight user stories, and how we know they work</h2>
+    <p>Each story has a priority (<span class="prio must">MUST</span> <span class="prio should">SHOULD</span> <span class="prio could">COULD</span>, our recommendation, to confirm against the charter) and a status as of 23 November (our assessment of the code).</p></div>
+  <div class="panel" style="display:grid;gap:10px">
+    <div class="progress" id="story-progress" role="img"></div>
+    <div class="legend-row" id="story-legend"></div>
+  </div>
+  <div class="stories" id="story-grid"></div>
+</section>
+
+<section id="rules" aria-labelledby="h-rules">
+  <div class="section-head"><span class="num">05 · Rules</span><h2 id="h-rules">The safety rules, in plain words</h2>
+    <p>The AI's output is treated as untrusted input. These rules hold whatever the AI says. Rules 7–9 are new in this version.</p></div>
+  <div class="rules" id="rules-grid">
+    <div class="panel rule"><span class="n">1</span><p><strong>Odoo sets the prices.</strong> The AI never decides money. Letting a user override a price needs its own design and test first.</p></div>
+    <div class="panel rule"><span class="n">2</span><p><strong>Nothing is saved without approval,</strong> and what is saved is a draft. Confirming or posting stays a separate, authorised step in Odoo.</p></div>
+    <div class="panel rule"><span class="n">3</span><p><strong>Everything is checked:</strong> the action, required details, quantities above zero, and which Odoo records may be touched.</p></div>
+    <div class="panel rule"><span class="n">4</span><p><strong>Names are matched carefully.</strong> An exact name wins, then a single partial match. If several match, you choose. A suggested product must be a real one, and you choose it, then approve.</p></div>
+    <div class="panel rule"><span class="n">5</span><p><strong>Possible duplicates are flagged:</strong> same customer, same amount, last 24 hours. You decide whether the repeat is intended.</p></div>
+    <div class="panel rule"><span class="n">6</span><p><strong>Test data is made up,</strong> and the assistant works through a restricted Odoo account (<code>ai_agent</code>).</p></div>
+    <div class="panel rule new"><span class="n">7</span><p><strong>No new customers through the chat.</strong> An unknown customer is reported; you create it in Odoo.</p></div>
+    <div class="panel rule new"><span class="n">8</span><p><strong>English only for now.</strong> Dutch can come later.</p></div>
+    <div class="panel rule new"><span class="n">9</span><p><strong>Look-ups are limited</strong> to customers, products, sales orders and customer invoices, at most 50 rows per answer.</p></div>
+  </div>
+</section>
+
+<section id="evaluation" aria-labelledby="h-eval">
+  <div class="section-head"><span class="num">06 · Evaluation</span><h2 id="h-eval">What "more than 90% correct" means in practice</h2>
+    <p>The charter asks for more than 90% of draft sales orders to be correct without edits. We measure that on a fixed set of at least 50 complete sales descriptions: at least 46 must come out right.</p></div>
+  <div class="panel waffle-wrap">
+    <div style="display:grid;gap:10px">
+      <div class="waffle" id="waffle" role="img" aria-label="50 squares: 46 must be correct, at most 4 may be wrong"></div>
+      <div class="legend-row"><span><i class="swatch" style="background:var(--ok)"></i>46 must be correct</span><span><i class="swatch" style="background:var(--draft)"></i>at most 4 may be wrong</span></div>
+    </div>
+    <div style="display:grid;gap:12px">
+      <h3>Two separate sets</h3>
+      <p><strong>Accuracy set:</strong> complete, normal sales descriptions. 30 first, then at least 50. This is what the 90% is measured on.</p>
+      <p><strong>Edge-case set:</strong> similar names, typos, unknown names, missing quantities, attempts to sneak in a price, approvals and rejections. These are reported separately and do not count towards the 50.</p>
+      <p class="note">Anastasia prepares both. Part of the data is kept aside and only used at the end, so the test is fair.</p>
+    </div>
+  </div>
+  <details class="dev"><summary>For developers: how it is measured</summary><div>
+    <p><strong>Precision</strong> = correct accepted matches ÷ all accepted matches. <strong>Recall</strong> = correct accepted matches ÷ all cases where a known match exists; cases that were asked back are reported explicitly.</p>
+    <p>Record per run: code commit, model, hardware, data version, expected and actual outcome, timing and evidence. Evaluate across input quality and threshold settings. Confidence must come from an evaluated matching method, not from the model rating itself.</p>
+    <p>Time: measure manual Odoo entry and assisted entry on the same transactions; report cold and warm model separately and say whether review time is included. Repeat the two-session approve/reject test and inspect the saved Odoo records.</p>
+  </div></details>
+</section>
+
+<section id="risks" aria-labelledby="h-risks">
+  <div class="section-head"><span class="num">07 · Known risks</span><h2 id="h-risks">Two things that could stop us reaching the target</h2></div>
+  <div class="grid-2">
+    <div class="panel risk"><h3>The AI sometimes picks the wrong action</h3>
+      <p>On 16 November the same sentence, "sell 4 premium chairs to Luther", became a sales order once and a customer look-up another time. A fix is ready (pull request #8: the AI answers the same way every time, plus a clearer instruction) but not yet tested with the real model. This is the biggest risk to the 90% result.</p>
+      <p class="note">Source: experiment 13 in the experiment log.</p></div>
+    <div class="panel risk"><h3>Speed depends on the computer</h3>
+      <p>The AI model needs a strong graphics card. On the team PC the first answer from a "cold" model takes about 40–45 seconds; kept loaded, 2–3 seconds. A Mac without a suitable graphics card timed out.</p>
+      <svg class="chart" id="latency" viewBox="0 0 420 130" role="img" aria-label="Cold model 40 to 45 seconds; first message with keep-alive 2 to 3 seconds; warm AI call 0.7 to 1.0 seconds"></svg>
+      <p class="note">RTX 3070 Ti, llama3.1, 5.3 GB of graphics memory (experiments 12, 13). The 30-second target assumes a loaded model.</p></div>
+  </div>
+</section>
+
+<section id="done" aria-labelledby="h-done">
+  <div class="section-head"><span class="num">08 · Definition of done</span><h2 id="h-done">When is the MVP finished?</h2>
+    <p>Ranked by importance. This ranking is our recommendation and must be confirmed against the charter at the review.</p></div>
+  <div class="dod" id="dod">
+    <div class="panel must-col"><span class="prio must" style="width:max-content">MUST · charter</span>
+      <ul class="clean"><li>The sales flow with draft controls works (stories R1–R5)</li><li>Matching is evaluated and reaches more than 90% (R8)</li><li>Another AI assistant can use it through MCP, and a person still approves every draft (R7)</li><li>PRD, blueprint, data format, setup guide and demo are reviewed</li></ul></div>
+    <div class="panel should-col"><span class="prio should" style="width:max-content">SHOULD</span>
+      <ul class="clean"><li>Every draft can be traced back to the request that created it (R6). First step: save the conversation number with each created draft. A store that survives a restart follows.</li></ul></div>
+    <div class="panel could-col"><span class="prio could" style="width:max-content">COULD · before real customer data</span>
+      <ul class="clean"><li>Log-in for operators, and roles that decide who may approve</li></ul></div>
+  </div>
+</section>
+
+<section id="review" aria-labelledby="h-review">
+  <div class="section-head"><span class="num">09 · Owners and open questions</span><h2 id="h-review">Who owns what, and what we decide at the review</h2></div>
+  <div class="people">
+    <div class="panel"><h3>Floyd</h3><p class="duty">Backend: checks, the connection to Odoo, storing records</p></div>
+    <div class="panel"><h3>Marija</h3><p class="duty">The AI's understanding of a sentence, and the review screen</p></div>
+    <div class="panel"><h3>Tijn</h3><p class="duty">Scope, business rules, test data, supervisor decisions</p></div>
+    <div class="panel"><h3>Anastasia</h3><p class="duty">Test definitions, evidence and documentation</p></div>
+    <div class="panel" style="border-style:dashed"><h3>MCP owner</h3><p class="duty">Not assigned yet: to name at the review</p></div>
+  </div>
+  <div class="panel"><h3 style="margin-bottom:8px">To confirm at the review</h3>
+    <ol class="questions"><li>How the MCP workflow works, and who builds it</li><li>What "approve a draft" means, compared with posting later in Odoo</li><li>Which matching method and confidence level we evaluate</li><li>Which Odoo price rules apply (plain list prices or customer price lists)</li><li>Whether operators need to log in</li><li>The supervisor's preferred blueprint format</li><li>The must / should / could ranking above</li></ol></div>
+</section>
+
+<section id="today" aria-labelledby="h-today">
+  <div class="section-head"><span class="num">10 · Where we are</span><h2 id="h-today">What already works, and what is still acceptance work</h2></div>
+  <div class="grid-2">
+    <div class="panel"><span class="pill done">Works today</span><p style="margin-top:8px">The chat and its server, creating drafts, approvals that expire, careful name matching with choices, prices from Odoo, duplicate warnings and an audit log. On 16 November Anastasia checked five workflow scenarios in the browser (commit <code>f6bb128</code>, scripted AI, real Odoo). That predates later changes and says nothing about the real AI's accuracy.</p></div>
+    <div class="panel"><span class="pill open">Still to do</span><p style="margin-top:8px">MCP integration; evaluated matching and confidence levels; the 90% result with the real model; a reliable link from each request to its record; and a design and test for operator identity and keeping sessions apart.</p></div>
+  </div>
+  <details class="dev"><summary>Sources and what changed in version 1.1</summary><div>
+    <p>Sources: the project charter (deliverables and definition of done), Anastasia's stakeholder notes of 23 November, <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/decisions/DECISIONS.md">DECISIONS.md</a>, <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/tests/TEST-RESULTS.md">TEST-RESULTS.md</a>, Anastasia's browser QA, the data-contract proposal, the <a href="https://github.com/Floydgodlieb/AI-Integrated-ERP/blob/main/documentation/our-work/experiments/EXPERIMENT-LOG.md">experiment log</a>, and the <a href="BLUEPRINT.html">blueprint</a>.</p>
+    <p>Changes in 1.1: story R2 matches the current matching rules; rules 7–9 added; the accuracy set and the edge-case set separated; known risks added; definition of done ranked; experiment log added as a source.</p>
+  </div></details>
+</section>
+</main>
+<footer>
+  PRD v1.1 · 23 Nov 2026 · Text source: <code>documentation/our-work/design/PRD.md</code> (Anastasia), with the review changes of 23 Nov. Change the Markdown and this page together, and log the change in <code>DECISIONS.md</code>.
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+// Shared helpers. Every library is optional: the page reads fine without D3, Three.js or Motion.
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function safely(label, fn) { try { fn(); } catch (e) { console.warn(label + " skipped:", e); } }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function revealOnScroll(selector) {
+  if (REDUCED || !window.Motion) return;
+  const { animate, inView, stagger } = Motion;
+  document.querySelectorAll(selector).forEach(group => {
+    inView(group, () => {
+      const items = group.children.length ? group.children : [group];
+      animate(items, { transform: ["translateY(10px)", "none"] }, { duration: .45, delay: stagger(.05), easing: "ease-out" });
+    }, { amount: .15 });
+  });
+}
+</script>
+<script>
+const HERO_CARDS = [
+  { kicker: "1 · YOU TYPE", title: "A sentence", lines: ["Create a sales order", "for Pepsi with 3 Chair"], border: "--accent" },
+  { kicker: "2 · YOU CHECK", title: "Pepsi", lines: ["Chair × 3 @ 50.00", "150.00 before tax"], border: "--draft", button: "Approve" },
+  { kicker: "3 · ODOO GETS", title: "Draft quotation", lines: ["Saved as a draft", "nothing posted"], border: "--ok", lastMuted: true },
+];
+// ---- hero: three floating cards (Three.js). Decorative: the same three steps are written out in the HTML. ----
+safely("hero 3D", () => {
+  const host = document.getElementById("hero-canvas");
+  if (!host || !window.THREE) { if (host) host.classList.add("no-3d"); return; }
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { host.classList.add("no-3d"); return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.domElement.setAttribute("aria-hidden", "true");
+  host.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 1, .1, 100);
+  camera.position.set(0, 0, 22);
+  const col = n => new THREE.Color(css(n) || "#888");
+  const accent = col("--accent"), draft = col("--draft"), ok = col("--ok");
+
+  function cardTexture(card) {
+    const W = 900, H = 560, c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    g.fillStyle = css("--panel"); g.strokeStyle = css(card.border); g.lineWidth = 10;
+    g.beginPath(); g.roundRect(8, 8, W - 16, H - 16, 44); g.fill(); g.stroke();
+    g.fillStyle = css(card.border); g.font = `600 40px ${css("--font-mono")}`; g.fillText(card.kicker, 60, 96);
+    g.fillStyle = css("--ink"); g.font = `700 62px ${css("--font-display")}`; g.fillText(card.title, 60, 178);
+    g.font = `44px ${css("--font-body")}`;
+    card.lines.forEach((l, i) => { g.fillStyle = i === card.lines.length - 1 && card.lastMuted ? css("--muted") : css("--ink"); g.fillText(l, 60, 268 + i * 70); });
+    if (card.button) {
+      g.fillStyle = css("--accent"); g.beginPath(); g.roundRect(W - 380, H - 130, 320, 80, 18); g.fill();
+      g.fillStyle = css("--panel"); g.font = `600 40px ${css("--font-body")}`; g.fillText(card.button, W - 352, H - 76);
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  }
+  const group = new THREE.Group(); scene.add(group);
+  const meshes = [];
+  document.fonts.ready.then(() => {
+    HERO_CARDS.forEach((card, i) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 4), new THREE.MeshBasicMaterial({ map: cardTexture(card), transparent: true }));
+      m.position.set((i - 1) * 7.2, (i === 1 ? .5 : -.3), i === 1 ? 1 : 0);
+      m.rotation.y = (1 - i) * .28;
+      group.add(m); meshes.push(m);
+    });
+    resize(); new ResizeObserver(resize).observe(host);
+    renderer.setAnimationLoop(tick);
+  });
+  // a dot that travels sentence -> review -> draft
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(.22, 24, 12), new THREE.MeshBasicMaterial({ color: accent }));
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(.5, 24, 12), new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: .2 }));
+  dot.add(glow); group.add(dot);
+  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-7.2, -2.6, .6), new THREE.Vector3(-3.6, -3.2, 1.4), new THREE.Vector3(0, -1.8, 1.6), new THREE.Vector3(3.6, -3.2, 1.4), new THREE.Vector3(7.2, -2.6, .6)]);
+  const trail = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)), new THREE.LineDashedMaterial({ color: col("--line"), dashSize: .2, gapSize: .15 }));
+  trail.computeLineDistances(); group.add(trail);
+  let mx = 0, my = 0;
+  host.addEventListener("pointermove", e => { const r = host.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width - .5; my = (e.clientY - r.top) / r.height - .5; });
+  function resize() {
+    const w = host.clientWidth, h = host.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    camera.position.z = w < 640 ? 34 : 17.5; camera.updateProjectionMatrix();
+  }
+  const clock = new THREE.Clock();
+  function tick() {
+    const t = clock.getElapsedTime();
+    meshes.forEach((m, i) => { m.position.y = (i === 1 ? .5 : -.3) + (REDUCED ? 0 : Math.sin(t * .8 + i * 1.7) * .18); });
+    group.rotation.y += ((REDUCED ? 0 : mx * .25) - group.rotation.y) * .05;
+    group.rotation.x += ((REDUCED ? 0 : my * .12) - group.rotation.x) * .05;
+    const k = REDUCED ? .5 : (t * .16) % 1;
+    dot.position.copy(curve.getPoint(k));
+    dot.material.color.copy(k < .45 ? accent : k < .62 ? draft : ok); glow.material.color.copy(dot.material.color);
+    renderer.render(scene, camera);
+  }
+});
+
+// ---- 04: user stories (status = our assessment of the code, 23 Nov) ----
+const STORIES = [
+  { id: "R1", prio: "must", st: "partial", want: "I describe a sale in English", ok: "Customer, product and a positive quantity are picked out, nothing required is invented, and missing details lead to a question.", now: "Works with the scripted AI; real-model accuracy not measured yet." },
+  { id: "R2", prio: "must", st: "done", want: "I pick the right customer or product", ok: "An exact name is used; otherwise one partial match (\"Floor\" → Chair Floor Protection). Several matches → a numbered list, you type the number or the name. Never your own company. Unknown names get a clear answer; suggestions need your choice.", now: "Built and tested (name matching, pick from the list)." },
+  { id: "R3", prio: "must", st: "partial", want: "I see the amounts before I approve", ok: "Customer, every line, quantities, Odoo prices, subtotal before tax and warnings are shown, and the saved amount agrees with Odoo's price setup.", now: "Shown with Odoo list prices; agreement with customer price lists not verified." },
+  { id: "R4", prio: "must", st: "done", want: "I decide whether it is created", ok: "Approving creates exactly one draft; rejecting or waiting too long creates none. You see the record number or a clear error.", now: "Built and tested; approvals expire after 5 minutes." },
+  { id: "R5", prio: "must", st: "done", want: "I can work next to a colleague", ok: "Two sessions can each have an approval waiting; one approval and one rejection create exactly one draft.", now: "Checked in the browser on 16 Nov; 20 parallel chats in the automated tests." },
+  { id: "R6", prio: "should", st: "open", want: "As a reviewer, I can trace a record back", ok: "Each draft links to the original sentence, the approval, the time and the Odoo number, with access rules agreed.", now: "Not yet: the log of a created draft does not record which conversation it came from." },
+  { id: "R7", prio: "must", st: "open", want: "As a user of another AI assistant, I can use the ERP through MCP", ok: "A documented MCP server offers the agreed actions and completes a draft sale from an external assistant, with a person approving.", now: "Not started; no owner yet." },
+  { id: "R8", prio: "must", st: "open", want: "As the team, we can put a number on matching quality", ok: "A labelled, made-up test set supports precision, recall, confidence levels and whole-order accuracy.", now: "Test set being prepared." },
+];
+const ST = { done: ["Works", "--ok", "done"], partial: ["Partly", "--draft", "partial"], open: ["Not yet", "--accent", "open"] };
+document.getElementById("story-grid").innerHTML = STORIES.map(s => `
+  <article class="panel story"><div class="tags"><span class="id">${s.id}</span><span class="prio ${s.prio}">${s.prio.toUpperCase()}</span><span class="pill ${ST[s.st][2]}">${ST[s.st][0]}</span></div>
+    <p class="want">"${esc(s.want)}"</p>
+    <p class="ok-when"><b>Done when</b>${esc(s.ok)}</p>
+    <p class="note">${esc(s.now)}</p></article>`).join("");
+const counts = Object.keys(ST).map(k => [k, STORIES.filter(s => s.st === k).length]);
+document.getElementById("story-progress").setAttribute("aria-label", counts.map(([k, n]) => `${ST[k][0]}: ${n}`).join(", "));
+document.getElementById("story-progress").innerHTML = counts.map(([k, n]) => `<span style="width:${n / STORIES.length * 100}%;background:var(${ST[k][1]})"></span>`).join("");
+document.getElementById("story-legend").innerHTML = counts.map(([k, n]) => `<span><i class="swatch" style="background:var(${ST[k][1]})"></i>${ST[k][0]}: ${n} of ${STORIES.length}</span>`).join("");
+
+// ---- 06: waffle (46 of 50) ----
+document.getElementById("waffle").innerHTML = Array.from({ length: 50 }, (_, i) => `<i class="${i >= 46 ? "spare" : ""}"></i>`).join("");
+safely("waffle motion", () => {
+  if (REDUCED || !window.Motion) return;
+  const cells = document.querySelectorAll("#waffle i");
+  Motion.inView("#waffle", () => { Motion.animate(cells, { transform: ["scale(.4)", "scale(1)"] }, { duration: .35, delay: Motion.stagger(.018) }); }, { amount: .4 });
+});
+
+// ---- 07: latency bars (D3, range bars) ----
+safely("latency", () => {
+  if (!window.d3) return;
+  const rows = [{ k: "cold model", v: [40, 45] }, { k: "first message, kept loaded", v: [2, 3] }, { k: "warm AI call", v: [0.7, 1.0] }];
+  const svg = d3.select("#latency"), W = 420, H = 130, m = { l: 160, r: 60, t: 6, b: 22 };
+  const x = d3.scaleLinear().domain([0, 50]).range([m.l, W - m.r]);
+  const y = d3.scaleBand().domain(rows.map(r => r.k)).range([m.t, H - m.b]).padding(.3);
+  svg.append("g").attr("class", "grid").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(5).tickSize(-(H - m.t - m.b)).tickFormat(d => d + " s")).call(g => g.select(".domain").remove());
+  svg.append("g").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).tickSize(0)).call(g => g.select(".domain").remove()).selectAll("text").attr("dx", "-6");
+  const bars = svg.selectAll(".b").data(rows).join("rect").attr("class", (d, i) => i ? "bar-after" : "bar-before").attr("rx", 3)
+    .attr("y", d => y(d.k)).attr("height", y.bandwidth()).attr("x", d => x(d.v[0])).attr("width", d => Math.max(3, x(d.v[1]) - x(d.v[0])));
+  svg.selectAll(".val").data(rows).join("text").attr("class", "val").attr("x", d => Math.max(x(d.v[1]), x(d.v[0]) + 3) + 6).attr("y", d => y(d.k) + y.bandwidth() / 2).attr("dy", ".35em").text(d => `${d.v[0]}–${d.v[1]} s`);
+  if (!REDUCED && window.Motion) Motion.inView("#latency", () => { bars.attr("width", 0).transition().duration(800).attr("width", d => Math.max(3, x(d.v[1]) - x(d.v[0]))); }, { amount: .5 });
+});
+
+// ---- 01: target bars grow in ----
+safely("target", () => {
+  if (REDUCED || !window.Motion) return;
+  Motion.inView("#target", () => { Motion.animate("#target .fill", { transform: ["scaleX(0)", "scaleX(1)"] }, { duration: .9, delay: Motion.stagger(.25), easing: "ease-out" }); }, { amount: .5 });
+  document.querySelectorAll("#target .fill").forEach(f => f.style.transformOrigin = "left");
+});
+revealOnScroll("#three-steps");
+revealOnScroll("#people-grid");
+revealOnScroll("#story-grid");
+revealOnScroll("#rules-grid");
+revealOnScroll("#dod");
+</script>
+</body>
+</html>

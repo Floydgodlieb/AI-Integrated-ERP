@@ -27,7 +27,9 @@ Not changed yet (AI & chat side, data contract): see "Not done yet" in [BACKEND-
 - From Floyd's audit log (experiment #13): the same sentence ("sell 4 premium chairs to Luther") once became an order and once a customer lookup.
 - Main AI call now runs at **temperature 0** (same input → same action).
 - Prompt rule: selling/ordering/quoting → `create_sales_order`, invoicing/billing → `create_invoice`, also for names the AI hasn't seen; lookups only when the user asks to show, find or list.
-- **PRD, blueprint and build plan** as interactive HTML pages in `documentation/our-work/product/` (D3 charts, Three.js request flow, Motion animation; scripted chat demo with the app's real messages). The PRD is rewritten from the previous group's and marks each requirement done / partly / open / not in v1.
+- **PRD and blueprint 1.1** (Anastasia's documents in `design/`, merged from `main`) with the review changes: R2 matches the real matching rules; rules 7–9 (no new customers, English only, look-ups ≤ 50 rows); separate accuracy and edge-case sets; known risks (action choice, hardware/latency); ranked definition of done; agent and allow-lists in the blueprint; states renamed; traceability gap made concrete; no approve tool for MCP.
+- **Readable HTML versions** `design/PRD.html` and `design/BLUEPRINT.html` for non-technical readers (Three.js, Motion, D3; plain language first, details in "For developers" fold-outs; scripted chat demo, request-state explorer, name-matching tester). Our earlier HTML PRD/blueprint (`product/`) removed.
+- **Build plan** moved to `planning/BUILD-PLAN.html` and updated to the blueprint's delivery sequence: supervisor review, test data, traceability, MCP, measurement, log-in (could).
 - Added `CLAUDE.md` in the repo root: commands, request flow and rules for Claude Code sessions in this repo, including the build workflow (phases + test gate) and HTML reports agreed in the 16 Nov supervisor meeting.
 
 ## AI product suggestions, clearer messages ([#7](https://github.com/Floydgodlieb/AI-Integrated-ERP/pull/7), merged 16 Nov 2026)

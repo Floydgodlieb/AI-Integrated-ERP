@@ -5,7 +5,7 @@ Two parts: **`previous-group/`** is what the previous group left us (archive, co
 ## Start here
 | You want to … | Read |
 |---|---|
-| See what we build, how, and what comes next | [PRD](our-work/product/PRD.html) · [Blueprint](our-work/product/BLUEPRINT.html) · [Build plan](our-work/product/BUILD-PLAN.html) (download and open in a browser; GitHub shows HTML as code) |
+| See what we build, how, and what comes next | [PRD](our-work/design/PRD.html) · [Blueprint](our-work/design/BLUEPRINT.html) · [Build plan](our-work/planning/BUILD-PLAN.html) (download and open in a browser; GitHub shows HTML as code) |
 | Set up the project on your PC | [`Setup/Quickstart.md`](../Setup/Quickstart.md) (in the repo root) |
 | Understand what the previous group built | [HANDOVER-REPORT.md](our-work/handover/HANDOVER-REPORT.md) |
 | See everything we changed | [CHANGELOG.md](our-work/changes/CHANGELOG.md) |
@@ -17,13 +17,12 @@ Two parts: **`previous-group/`** is what the previous group left us (archive, co
 ## our-work/
 | Folder | Contents |
 |---|---|
-| [`product/`](our-work/product/) | [PRD.html](our-work/product/PRD.html) – what v1 must do and its status · [BLUEPRINT.html](our-work/product/BLUEPRINT.html) – architecture, safety boundary, measurements · [BUILD-PLAN.html](our-work/product/BUILD-PLAN.html) – phases, test gates, checkboxes |
 | [`handover/`](our-work/handover/) | [HANDOVER-REPORT.md](our-work/handover/HANDOVER-REPORT.md) – full investigation of the previous group's work (snapshot 9–10 Nov 2026) · [SESSION-OVERVIEW.md](our-work/handover/SESSION-OVERVIEW.md) – first setup session (snapshot 10 Nov) |
-| [`planning/`](our-work/planning/) | [`weekly-reports/`](our-work/planning/weekly-reports/) – weekly progress reports · [TEAM-PLAN.md](our-work/planning/TEAM-PLAN.md) – workstreams, timeline, backlog · [roles-and-tasks.pdf](our-work/planning/roles-and-tasks.pdf) – roles and tasks per person · [project-overview.pdf](our-work/planning/project-overview.pdf) – 2-page visual summary · [HANDOFF-MARIJA.md](our-work/planning/HANDOFF-MARIJA.md) |
+| [`planning/`](our-work/planning/) | [`weekly-reports/`](our-work/planning/weekly-reports/) – weekly progress reports · [TEAM-PLAN.md](our-work/planning/TEAM-PLAN.md) – workstreams, timeline, backlog · [roles-and-tasks.pdf](our-work/planning/roles-and-tasks.pdf) – roles and tasks per person · [project-overview.pdf](our-work/planning/project-overview.pdf) – 2-page visual summary · [HANDOFF-MARIJA.md](our-work/planning/HANDOFF-MARIJA.md) · [BUILD-PLAN.html](our-work/planning/BUILD-PLAN.html) – phases, test gates, checkboxes |
 | [`changes/`](our-work/changes/) | [CHANGELOG.md](our-work/changes/CHANGELOG.md) – all changes per pull request, plus V3 vs V3.1 at a glance · [BACKEND-CHANGES.md](our-work/changes/BACKEND-CHANGES.md) – technical detail of the backend work |
 | [`tests/`](our-work/tests/) | [TEST-RESULTS.md](our-work/tests/TEST-RESULTS.md) – automated runs, before/after, real-AI tests · [MANUAL-TEST-CHECKLIST.md](our-work/tests/MANUAL-TEST-CHECKLIST.md) – what to test by hand · [`runs/`](our-work/tests/runs/) – full report of each test run |
 | [`experiments/`](our-work/experiments/) | [EXPERIMENT-LOG.md](our-work/experiments/EXPERIMENT-LOG.md) – hypothesis → change → measurement → lesson (grading evidence) |
-| [`design/`](our-work/design/) | [`data-contract/`](our-work/design/data-contract/) – DRAFT of what the AI may send to the backend (to agree between Floyd and Marija) |
+| [`design/`](our-work/design/) | [PRD.md](our-work/design/PRD.md) / [PRD.html](our-work/design/PRD.html) – requirements, stories, rules, definition of done · [BLUEPRINT.md](our-work/design/BLUEPRINT.md) / [BLUEPRINT.html](our-work/design/BLUEPRINT.html) – architecture, safety fence, request states, traceability, MCP proposal · [`data-contract/`](our-work/design/data-contract/) – DRAFT of what the AI may send to the backend (to agree between Floyd and Marija) |
 | [`decisions/`](our-work/decisions/) | [DECISIONS.md](our-work/decisions/DECISIONS.md) – what we decided and why; open decisions |
 
 ## previous-group/
