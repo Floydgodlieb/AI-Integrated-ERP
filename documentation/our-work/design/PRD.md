@@ -1,8 +1,3 @@
-# Product Requirements Document — AI-Integrated ERP
-
-Version 1.0 · 23 November 2026 · Prepared for the student team and Witek
-
-Status — Draft for team and supervisor review. This document records the proposed MVP requirements. Implementation status is based on the repository reviewed on 23 November, whose main branch points to commit `33b0168` from 16 November.
 
 ## Purpose and problem
 
